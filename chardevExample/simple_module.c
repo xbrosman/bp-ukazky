@@ -33,7 +33,7 @@ ssize_t read(struct file *pfile, char __user *buffer, size_t length, loff_t *off
     else
         bytes_to_read = maxbytes;
     if (bytes_to_read == 0)
-        printk(KERN_ALERT "%s: Reached the end of the device\n", NAME);
+        printk(KERN_INFO "%s: Reached the end of the device\n", NAME);
 
     bytes_read = bytes_to_read - copy_to_user(buffer, device_buffer + *offset, bytes_to_read);
     *offset += bytes_read;
