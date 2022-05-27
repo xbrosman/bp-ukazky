@@ -1,5 +1,8 @@
 #include <linux/init.h>
 #include <linux/module.h>
+#include <linux/kernel.h>
+#include <linux/semaphore.h>  
+#include <linux/uaccess.h> 
 #include <linux/fs.h>
 
 #define MY_MAJOR 42
@@ -24,14 +27,14 @@ int open(struct inode *pinode, struct file *pfile)
 
 ssize_t read(struct file *pfile, char __user *buffer, size_t length, loff_t *offset)
 {
-    int maxbytes;
+    int b_max;
     int bytes_to_read;
     int bytes_read;
-    maxbytes = BUFFER_SIZE - *offset;
-    if (maxbytes > length)
+    b_max = BUFFER_SIZE - *offset;
+    if (b_max > length)
         bytes_to_read = length;
     else
-        bytes_to_read = maxbytes;
+        bytes_to_read = b_max;
     if (bytes_to_read == 0)
         printk(KERN_INFO "%s: Reached the end of the device\n", NAME);
 
@@ -44,14 +47,14 @@ ssize_t read(struct file *pfile, char __user *buffer, size_t length, loff_t *off
 
 ssize_t write(struct file *pfile, const char __user *buffer, size_t length, loff_t *offset)
 {
-    int maxbytes;
+    int b_max;
     int bytes_to_write;
     int bytes_writen;
-    maxbytes = BUFFER_SIZE - *offset;
-    if (maxbytes > length)
+    b_max = BUFFER_SIZE - *offset;
+    if (b_max > length)
         bytes_to_write = length;
     else
-        bytes_to_write = maxbytes;
+        bytes_to_write = b_max;
 
     bytes_writen = bytes_to_write - copy_from_user(device_buffer + *offset, buffer, bytes_to_write);
     *offset += bytes_writen;
