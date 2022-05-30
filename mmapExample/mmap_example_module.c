@@ -113,15 +113,15 @@ static const struct file_operations mmap_fops = {
 int mmap_module_init(void)
 {
 	mutex_init(&mmap_mutex);
-  	printk(KERN_INFO "%s: %s\n",NAME, __FUNCTION__);
     register_chrdev(MY_MAJOR,NAME, &mmap_fops);
+  	printk(KERN_INFO "%s: %s\n",NAME, __FUNCTION__);
     return 0;
 }
 
 void mmap_module_exit(void)
 {
-    printk(KERN_INFO "%s: %s\n",NAME, __FUNCTION__);
     unregister_chrdev(MY_MAJOR, NAME);
+    printk(KERN_INFO "%s: %s\n",NAME, __FUNCTION__);
 }
 
 module_init(mmap_module_init);

@@ -82,15 +82,15 @@ struct file_operations my_file_operations = {
 int simple_module_init(void)
 {
     sema_init(&sem, 1);
-    printk(KERN_INFO "%s: %s\n", NAME, __FUNCTION__);
     register_chrdev(MY_MAJOR, NAME, &my_file_operations);
+    printk(KERN_INFO "%s: %s\n", NAME, __FUNCTION__);
     return 0;
 }
 
 void simple_module_exit(void)
 {
-    printk(KERN_INFO "%s: %s\n", NAME, __FUNCTION__);
     unregister_chrdev(MY_MAJOR, NAME);
+    printk(KERN_INFO "%s: %s\n", NAME, __FUNCTION__);
 }
 
 module_init(simple_module_init);
