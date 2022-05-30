@@ -34,18 +34,16 @@ __used __section("__versions") = {
 	{ 0xdcc1a13d, "kmem_cache_alloc_trace" },
 	{ 0x5eb946b4, "kmalloc_caches" },
 	{ 0x13c49cc2, "_copy_from_user" },
-	{ 0xf21017d9, "mutex_trylock" },
 	{ 0x6b10bee1, "_copy_to_user" },
 	{ 0x88db9f48, "__check_object_size" },
 	{ 0x4c9d28b0, "phys_base" },
 	{ 0xb09aad36, "remap_pfn_range" },
 	{ 0x7cd8d75e, "page_offset_base" },
 	{ 0xc5850110, "printk" },
-	{ 0x409bcb62, "mutex_unlock" },
 	{ 0xbdfb6dbb, "__fentry__" },
 };
 
 MODULE_INFO(depends, "");
 
 
-MODULE_INFO(srcversion, "12253821ECB2548F9401587");
+MODULE_INFO(srcversion, "67635A58B194133D89A76D1");

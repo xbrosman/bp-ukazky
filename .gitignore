@@ -1,9 +1,8 @@
 .vscode/
 *.o
 *.ko
-*.mod
+*.mod*
 *.order
 *.symvers
-
 .*
 *.app

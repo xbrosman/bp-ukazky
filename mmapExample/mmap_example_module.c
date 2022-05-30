@@ -10,7 +10,7 @@
 #define MY_MAJOR 43
 #define MY_MAX_MINORS 5
 #define BUFFER_SIZE 4096
-#define MAX_SIZE (PAGE_SIZE * 2)
+#define MAX_SIZE 4096
 #define NAME "mmap_example_module"
 
 static DEFINE_MUTEX(mchar_mutex);
@@ -19,19 +19,19 @@ static char *device_buffer;
 
 static int open(struct inode *pinode, struct file *pfile)
 {
-    if(!mutex_trylock(&mchar_mutex)) {
-        printk(KERN_ALERT "%s: Device is already opened in other device. Can not open.\n", NAME);
-		return -1;
-    }
+    // if(!mutex_trylock(&mchar_mutex)) {
+    //     printk(KERN_ALERT "%s: Device is already opened in other device. Can not open.\n", NAME);
+	// 	return -1;
+    // }
     printk(KERN_INFO "%s: %s\n", NAME,  __FUNCTION__);
     return 0;
 }
 
 int close(struct inode *pinode, struct file *pfile)
 {    
-	mutex_unlock(&mchar_mutex);
-	printk(KERN_INFO "%s: %s\n",NAME, device_buffer);
-    printk(KERN_INFO "%s: %s\n",NAME, __FUNCTION__);
+	// if (mutex_is_locked(&mchar_mutex))
+	// 	mutex_unlock(&mchar_mutex);
+	printk(KERN_INFO "%s: %s\n",NAME, __FUNCTION__);
     return 0;
 }
 
@@ -106,7 +106,7 @@ struct file_operations my_file_operations = {
 
 int mmap_module_init(void)
 {
-	device_buffer = kmalloc(MAX_SIZE, GFP_KERNEL); 
+	device_buffer = kmalloc(MAX_SIZE, GFP_KERNEL);
     register_chrdev(MY_MAJOR, NAME, &my_file_operations);
 	mutex_init(&mchar_mutex);
     printk(KERN_INFO "%s: %s\n", NAME, __FUNCTION__);
@@ -115,7 +115,7 @@ int mmap_module_init(void)
 
 void mmap_module_exit(void)
 {	
-	mutex_destroy(&mchar_mutex); 
+	mutex_destroy(&mchar_mutex);
     unregister_chrdev(MY_MAJOR, NAME);
     printk(KERN_INFO "%s: %s\n", NAME, __FUNCTION__);
 }
