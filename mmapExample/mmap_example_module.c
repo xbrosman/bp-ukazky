@@ -1,127 +1,123 @@
-#include <linux/init.h>
 #include <linux/module.h>
-#include <linux/fs.h>
-#include <linux/mutex.h>
 #include <linux/kernel.h>
-#include <linux/slab.h>
-#include <linux/mm.h>
-
-
-#ifndef VM_RESERVED
-#define  VM_RESERVED   (VM_DONTEXPAND | VM_DONTDUMP)
-#endif
+#include <linux/device.h>
+#include <linux/init.h> 
+#include <linux/fs.h> 
+#include <linux/mm.h> 
+#include <asm/uaccess.h>
+#include<linux/slab.h>
 
 #define MY_MAJOR 43
 #define MY_MAX_MINORS 5
 #define BUFFER_SIZE 4096
-#define NAME "MMAP_Module"
+#define MAX_SIZE (PAGE_SIZE * 2)
+#define NAME "mmap_example_module"
 
-static DEFINE_MUTEX(mmap_mutex);
+static DEFINE_MUTEX(mchar_mutex);
 
-struct mmap_data
+static char *device_buffer;
+
+static int open(struct inode *pinode, struct file *pfile)
 {
-    char *data;
-    int reference;
-};
-
-void mmap_open(struct vm_area_struct *vma)
-{
-	struct mmap_data *info = (struct mmap_data *)vma->vm_private_data;
-	info->reference++;
+    if(!mutex_trylock(&mchar_mutex)) {
+        printk(KERN_ALERT "%s: Device is already opened in other device. Can not open.\n", NAME);
+		return -1;
+    }
+    printk(KERN_INFO "%s: %s\n", NAME,  __FUNCTION__);
+    return 0;
 }
 
-void mmap_close(struct vm_area_struct *vma)
-{
-	struct mmap_data *info = (struct mmap_data *)vma->vm_private_data;
-	info->reference--;
+int close(struct inode *pinode, struct file *pfile)
+{    
+	mutex_unlock(&mchar_mutex);
+	printk(KERN_INFO "%s: %s\n",NAME, device_buffer);
+    printk(KERN_INFO "%s: %s\n",NAME, __FUNCTION__);
+    return 0;
 }
 
-// int mmap_fault(struct vm_area_struct *vma, struct vm_fault *vmf)
-// {
-// 	struct page *page;
-// 	struct mmap_data *info;
-
-// 	info = (struct mmap_data *)vma->vm_private_data;
-// 	if (!info->data) {
-// 		printk("No data\n");
-// 		return 0;
-// 	}
-
-// 	page = virt_to_page(info->data);
-
-// 	get_page(page);
-// 	vmf->page = page;
-
-// 	return 0;
-// }
-
-struct vm_operations_struct mmap_vm_ops = {
-	.open = mmap_open,
-	.close = mmap_close,
-	// .fault = mmap_fault,
-};
-
-int op_mmap(struct file *filp, struct vm_area_struct *vma)
+static ssize_t read(struct file *pfile, char __user *buffer, size_t length, loff_t *offset)
 {
-	vma->vm_ops = &mmap_vm_ops;
-	vma->vm_flags |= VM_RESERVED;
-	vma->vm_private_data = filp->private_data;
-	mmap_open(vma);
-	return 0;
+    int b_max;
+    int bytes_to_read;
+    int bytes_read;
+    b_max = BUFFER_SIZE - *offset;
+    if (b_max > length)
+        bytes_to_read = length;
+    else
+        bytes_to_read = b_max;
+    if (bytes_to_read == 0)
+        printk(KERN_INFO "%s: Reached the end of the device\n", NAME);
+
+    bytes_read = bytes_to_read - copy_to_user(buffer, device_buffer + *offset, bytes_to_read);
+    *offset += bytes_read;
+
+    printk(KERN_INFO "%s: %s, read: %dB\n",NAME, __FUNCTION__, bytes_read);
+    return bytes_read;
 }
 
-int mmapfop_close(struct inode *inode, struct file *filp)
+static ssize_t write(struct file *pfile, const char __user *buffer, size_t length, loff_t *offset)
 {
-	struct mmap_data *info = filp->private_data;
+    int b_max;
+    int bytes_to_write;
+    int bytes_writen;
+    b_max = BUFFER_SIZE - *offset;
+    if (b_max > length)
+        bytes_to_write = length;
+    else
+        bytes_to_write = b_max;
 
-	free_page((unsigned long)info->data);
-	kfree(info);
-	filp->private_data = NULL;
+    bytes_writen = bytes_to_write - copy_from_user(device_buffer + *offset, buffer, bytes_to_write);
+    *offset += bytes_writen;
 
-	mutex_unlock(&mmap_mutex);
-
-	return 0;
+    printk(KERN_INFO "%s: %s, written: %dB\n", NAME, __FUNCTION__, bytes_writen);
+    return bytes_writen;
 }
 
-int mmapfop_open(struct inode *inode, struct file *filp)
+static int mmap(struct file *filp, struct vm_area_struct *vma)
 {
-	struct mmap_data *info = NULL;
+    int ret = 0;
+    struct page *page = NULL;
+    unsigned long size = (unsigned long)(vma->vm_end - vma->vm_start);
 
-	if (!mutex_trylock(&mmap_mutex)) {
-		printk(KERN_WARNING
-		       "Another process is accessing the device\n");
-		return -EBUSY;
-	}
-
-	info = kmalloc(sizeof(struct mmap_data), GFP_KERNEL);
-	info->data = (char *)get_zeroed_page(GFP_KERNEL);
-	memcpy(info->data, "Hello from kernel this is file: ", 32);
-	memcpy(info->data + 32, filp->f_path.dentry->d_name.name,
-	       strlen(filp->f_path.dentry->d_name.name));
-	/* assign this info struct to the file */
-	filp->private_data = info;
-	return 0;
+    if (size > MAX_SIZE) {
+        ret = -EINVAL;
+        goto out;  
+    } 
+   
+    page = virt_to_page((unsigned long)device_buffer + (vma->vm_pgoff << PAGE_SHIFT)); 
+    ret = remap_pfn_range(vma, vma->vm_start, page_to_pfn(page), size, vma->vm_page_prot);
+ 	printk(KERN_INFO "%s: %s\n", NAME, __FUNCTION__);  
+    if (ret != 0) {
+        goto out;
+    }   
+out:
+    return ret;
 }
 
-static const struct file_operations mmap_fops = {
-	.owner = THIS_MODULE,
-	.open = mmapfop_open,
-	.release = mmapfop_close,
-	.mmap = op_mmap,
+// Štruktúra obsahuje vyžšie definované funkcie.
+struct file_operations my_file_operations = {
+    .owner = THIS_MODULE,
+    .open = open,
+    .read = read,
+    .write = write,
+	.mmap = mmap,
+    .release = close,
 };
 
 int mmap_module_init(void)
 {
-	mutex_init(&mmap_mutex);
-    register_chrdev(MY_MAJOR,NAME, &mmap_fops);
-  	printk(KERN_INFO "%s: %s\n",NAME, __FUNCTION__);
+	device_buffer = kmalloc(MAX_SIZE, GFP_KERNEL); 
+    register_chrdev(MY_MAJOR, NAME, &my_file_operations);
+	mutex_init(&mchar_mutex);
+    printk(KERN_INFO "%s: %s\n", NAME, __FUNCTION__);
     return 0;
 }
 
 void mmap_module_exit(void)
-{
+{	
+	mutex_destroy(&mchar_mutex); 
     unregister_chrdev(MY_MAJOR, NAME);
-    printk(KERN_INFO "%s: %s\n",NAME, __FUNCTION__);
+    printk(KERN_INFO "%s: %s\n", NAME, __FUNCTION__);
 }
 
 module_init(mmap_module_init);

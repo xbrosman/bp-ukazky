@@ -28,7 +28,7 @@ int main(int argc, char const *argv[])
     clock_t t;
     double time_taken;
 
-    char *address = NULL;
+    char *p = NULL;
 
     if (access(DEVICE, F_OK) == -1){
     
@@ -36,18 +36,14 @@ int main(int argc, char const *argv[])
         return 0;
     }
     printf("Module %s loaded... \n", DEVICE);
-    fd = open(DEVICE, O_RDWR);
-    address = mmap (NULL, PAGE_SIZE, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
-    if (address == MAP_FAILED)
-    {
-        perror ("mmap operation failed");
-        return -1;
-    }
-
-    //printf ("Initial message: %s\n", address);
-    memcpy (address + 11, "*user*", 6);
-    //printf ("Changed message: %s\n", address);
-    close (fd);
+    fd = open(DEVICE, O_RDWR); 
+    
+    if(fd >= 0) { 
+        p = (char*)mmap(0, PAGE_SIZE, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);  
+        //memcpy(p, "Test", 4*sizeof(char));
+        printf("File descriptor %d, mem: %s\n", fd, p);       
+        close(fd);  
+    }      
 
     return 0;
 }
