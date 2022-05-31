@@ -12,6 +12,7 @@ double cpu_time_used;
 int fd = 0;
 int offset = 0;
 char *dataToWrite;
+char *dataToRead;
 
 void prepareData(){
     dataToWrite = (char*)malloc(SIZE*sizeof(char));    
@@ -21,40 +22,26 @@ void prepareData(){
         dataToWrite[i] = 'A'+(char)(i%24);
     }
     dataToWrite[SIZE] = '\0';
+    dataToRead = (char*)malloc(SIZE*sizeof(char));
+    memset(dataToRead, 0, sizeof(dataToRead));
+
+    fd = open(DEVICE, O_RDWR);
 }
 
-void writeToDev() {
-    fd = open(DEVICE, O_RDWR);
-    char *dataToWrite = (char*)malloc(SIZE*sizeof(char));
-   
-    ssize_t res;      
-
-    clock_t t;
-    double time_taken;
+void writeToDev() {   
+    ssize_t res;         
     res = write(fd, dataToWrite, strlen(dataToWrite), &offset);
-
     if (res == -1)
-        printf("Zapisovanie sa nepodarilo...\n");
-    
-   // printf("Zapisanych: %liB ...\n", res);
-    free(dataToWrite);
-    close(fd);
+        printf("Zapisovanie sa nepodarilo...\n");    
+   // printf("Zapisanych: %liB ...\n", res);   
 }
 
 void readFromDev() {
-    fd = open(DEVICE, O_RDWR);
-    char *data = (char*)malloc(SIZE*sizeof(char));
-    memset(data, 0, sizeof(data));
-    ssize_t res;    
-
-    
-    res = read(fd, data, SIZE, &offset);
-    
+    ssize_t res;        
+    res = read(fd, dataToRead, SIZE, &offset);    
     if (res == -1)
         printf("citanie sa nepodarilo\n");
     //printf("Precitaných: %liB ... \n",res);
-    free(data);
-    close(fd);
 }
 
 int main(int argc, char const *argv[])
@@ -67,7 +54,8 @@ int main(int argc, char const *argv[])
         printf("Module %s not loaded... Close\n", DEVICE);
         return 0;
     }
-    printf("Module %s loaded... \n", DEVICE);
+    printf("Module %s loaded... \n", DEVICE);   
+    prepareData();
 
     t = clock();
     writeToDev(); 
@@ -80,7 +68,11 @@ int main(int argc, char const *argv[])
     readFromDev();
     t = clock() - t;
     time_taken = ((double)t)/CLOCKS_PER_SEC;
-    printf("Cas na vykonanie citania: %fus\n", time_taken*1000000);      
+    printf("Cas na vykonanie citania: %fus\n", time_taken*1000000);     
 
+
+    close(fd);
+    free(dataToWrite);
+    free(dataToRead);
     return 0;
 }
