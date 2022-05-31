@@ -14,6 +14,7 @@ double cpu_time_used;
 int fd = 0;
 int offset = 0;
 char *dataToWrite;
+char *p = NULL; 
 
 void prepareData(){
     dataToWrite = (char*)malloc(SIZE*sizeof(char));    
@@ -23,28 +24,22 @@ void prepareData(){
         dataToWrite[i] = 'A'+(char)(i%24);
     }
     dataToWrite[SIZE] = '\0';
+    if (fd >= 0)
+        p = (char*)mmap(0, P_SIZE, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0); 
 }
 
 int writeToDev() {
-    char *p = NULL;
-    fd = open(DEVICE, O_RDWR); 
-    if(fd >= 0) { 
-        p = (char*)mmap(0, P_SIZE, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);  
+      
+    if(fd >= 0) {       
         memcpy(p, dataToWrite, strlen(dataToWrite));   
-        //printf("File descriptor %d, Writen: %ld\n", fd, strlen(p));       
-        munmap(p, 4096);  
-        close(fd);  
+        printf("File descriptor %d, Writen: %ld\n", fd, strlen(p));     
     }    
     return 0;
 }
 
 int readFromDev() {
-    char *p = NULL;
-    fd = open(DEVICE, O_RDWR); 
     if(fd >= 0) { 
-        p = (char*)mmap(0, P_SIZE, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);  
-        //printf("File descriptor %d, read: %ld\n", fd, strlen(p));       
-        close(fd);  
+        printf("File descriptor %d, read: %ld\n", fd, strlen(p));                
     }    
     return 0;
 }
@@ -61,7 +56,9 @@ int main(int argc, char const *argv[])
     }
     printf("Module %s loaded... \n", DEVICE);
     
+    fd = open(DEVICE, O_RDWR);      
     prepareData();
+    printf("File descriptor %d, Writen: %ld, Message from kernel: %s\n", fd, strlen(p), p);     
    
     t = clock();
     writeToDev();     
@@ -74,6 +71,6 @@ int main(int argc, char const *argv[])
     t = clock() - t;
     time_taken = ((double)t)/CLOCKS_PER_SEC;
     printf("Cas na vykonanie citania: %fus\n", time_taken*1000000); 
-
+    close(fd); 
     return 0;
 }

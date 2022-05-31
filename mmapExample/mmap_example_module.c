@@ -9,8 +9,7 @@
 
 #define MY_MAJOR 43
 #define MY_MAX_MINORS 5
-#define BUFFER_SIZE 4096
-#define MAX_SIZE 4096
+#define MAX_SIZE (PAGE_SIZE*2)
 #define NAME "mmap_example_module"
 
 static DEFINE_MUTEX(mchar_mutex);
@@ -40,7 +39,7 @@ static ssize_t read(struct file *pfile, char __user *buffer, size_t length, loff
     int b_max;
     int bytes_to_read;
     int bytes_read;
-    b_max = BUFFER_SIZE - *offset;
+    b_max = MAX_SIZE - *offset;
     if (b_max > length)
         bytes_to_read = length;
     else
@@ -60,7 +59,7 @@ static ssize_t write(struct file *pfile, const char __user *buffer, size_t lengt
     int b_max;
     int bytes_to_write;
     int bytes_writen;
-    b_max = BUFFER_SIZE - *offset;
+    b_max = MAX_SIZE - *offset;
     if (b_max > length)
         bytes_to_write = length;
     else
@@ -107,6 +106,9 @@ struct file_operations my_file_operations = {
 int mmap_module_init(void)
 {
 	device_buffer = kmalloc(MAX_SIZE, GFP_KERNEL);
+    char *text = "Test spojenia s jadrom\0";
+    memcpy(device_buffer,text , strlen(text)*sizeof(char));
+    
     register_chrdev(MY_MAJOR, NAME, &my_file_operations);
 	mutex_init(&mchar_mutex);
     printk(KERN_INFO "%s: %s\n", NAME, __FUNCTION__);
