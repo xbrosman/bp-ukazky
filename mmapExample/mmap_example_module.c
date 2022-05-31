@@ -18,18 +18,18 @@ static char *device_buffer;
 
 static int open(struct inode *pinode, struct file *pfile)
 {
-    // if(!mutex_trylock(&mchar_mutex)) {
-    //     printk(KERN_ALERT "%s: Device is already opened in other device. Can not open.\n", NAME);
-	// 	return -1;
-    // }
+    if(!mutex_trylock(&mchar_mutex)) {
+        printk(KERN_ALERT "%s: Device is already opened in other device. Can not open.\n", NAME);
+		return -1;
+    }
     printk(KERN_INFO "%s: %s\n", NAME,  __FUNCTION__);
     return 0;
 }
 
 int close(struct inode *pinode, struct file *pfile)
 {    
-	// if (mutex_is_locked(&mchar_mutex))
-	// 	mutex_unlock(&mchar_mutex);
+	if (mutex_is_locked(&mchar_mutex))
+		mutex_unlock(&mchar_mutex);
 	printk(KERN_INFO "%s: %s\n",NAME, __FUNCTION__);
     return 0;
 }
@@ -80,16 +80,15 @@ static int mmap(struct file *filp, struct vm_area_struct *vma)
 
     if (size > MAX_SIZE) {
         ret = -EINVAL;
-        goto out;  
+        return ret;
     } 
    
     page = virt_to_page((unsigned long)device_buffer + (vma->vm_pgoff << PAGE_SHIFT)); 
     ret = remap_pfn_range(vma, vma->vm_start, page_to_pfn(page), size, vma->vm_page_prot);
  	printk(KERN_INFO "%s: %s\n", NAME, __FUNCTION__);  
     if (ret != 0) {
-        goto out;
+       return ret;
     }   
-out:
     return ret;
 }
 
@@ -108,7 +107,7 @@ int mmap_module_init(void)
 	device_buffer = kmalloc(MAX_SIZE, GFP_KERNEL);
     char *text = "Test spojenia s jadrom\0";
     memcpy(device_buffer,text , strlen(text)*sizeof(char));
-    
+
     register_chrdev(MY_MAJOR, NAME, &my_file_operations);
 	mutex_init(&mchar_mutex);
     printk(KERN_INFO "%s: %s\n", NAME, __FUNCTION__);
