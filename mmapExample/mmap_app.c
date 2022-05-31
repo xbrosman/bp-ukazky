@@ -25,7 +25,9 @@ void prepareData(){
     }
     dataToWrite[SIZE] = '\0';
     if (fd >= 0)
-        p = (char*)mmap(0, P_SIZE, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0); 
+        p = (char*)mmap(0, P_SIZE, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+    else 
+        printf("Bad File descriptor %d, not opened\n", fd);     
 }
 
 int writeToDev() {
