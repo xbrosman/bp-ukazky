@@ -2,7 +2,6 @@
 #include <linux/module.h>
 #include <linux/kernel.h>
 #include <linux/printk.h>
-#include <linux/fs.h>
 #include <linux/string.h>
 #include <net/sock.h>
 #include <linux/netlink.h>
