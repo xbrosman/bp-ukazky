@@ -96,7 +96,9 @@ int main(int argc, char const *argv[])
     {
         printf("Time to read: %fus\n", time_taken * 1000000);
     }
-
+    close(fd);
+    free(dataToWrite);
+    free(dataToRead);
     return 0;
 freeall:
     close(fd);

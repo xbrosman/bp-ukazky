@@ -142,7 +142,9 @@ int main(int argc, char **argv)
     {
         printf("Time to read: %fus\n", time_taken * 1000000);
     }
-
+    close(sock_fd);
+    free(dataToWrite);
+    free(dataToRead);
     return 0;
 freeall:
     close(sock_fd);
