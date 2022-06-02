@@ -22,8 +22,15 @@ struct iovec iov;
 int sock_fd;
 int rc;
 
-void prepareData()
+int networkSetup()
 {
+    sock_fd = socket(PF_NETLINK, SOCK_RAW, NETLINK_PORT);
+    if (sock_fd < 0)
+    {
+        printf("socket: %s\n", strerror(errno));
+        return 1;
+    }
+
     memset(&src_addr, 0, sizeof(src_addr));
     src_addr.nl_family = AF_NETLINK;
     src_addr.nl_pid = getpid(); /* self pid */
@@ -33,17 +40,7 @@ void prepareData()
     memset(&dest_addr, 0, sizeof(dest_addr));
     dest_addr.nl_family = AF_NETLINK;
     dest_addr.nl_pid = 0;    /* For Linux Kernel */
-    dest_addr.nl_groups = 0; /* unicast */
-
-    dataToWrite = (char *)malloc(SIZE * sizeof(char));
-    int i;
-    for (i = 0; i < SIZE; i++)
-    {
-        dataToWrite[i] = 'A' + (char)(i % 26);
-    }
-    dataToWrite[SIZE] = '\0';
-    dataToRead = (char *)malloc(SIZE * sizeof(char));
-    memset(dataToRead, 0, sizeof(dataToRead));
+    dest_addr.nl_groups = 0; /* unicast */    
 
     nlh = (struct nlmsghdr *)malloc(NLMSG_SPACE(MAX_PAYLOAD));
 
@@ -64,65 +61,92 @@ void prepareData()
     msg.msg_namelen = sizeof(dest_addr);
     msg.msg_iov = &iov;
     msg.msg_iovlen = 1;
+    return 0;
+}
 
+void prepareData()
+{
+    dataToWrite = (char *)malloc(SIZE * sizeof(char));
+    int i;
+    for (i = 0; i < SIZE; i++)
+    {
+        dataToWrite[i] = 'A' + (char)(i % 26);
+    }
+    dataToWrite[SIZE] = '\0';
+    dataToRead = (char *)malloc(SIZE * sizeof(char));
+    memset(dataToRead, 0, sizeof(dataToRead));  
     // printf("\n %s %s\n", dataToRead, dataToWrite);
 }
 
-void writeToDev()
+int writeToDev()
 {
     rc = sendmsg(sock_fd, &msg, 0);
     if (rc < 0)
     {
-        printf("sendmsg(): %s\n", strerror(errno));
+        printf("send: %s\n", strerror(errno));
         close(sock_fd);
-        return;
+        return 1;
     }
     //printf("Send to kernel: %s\n", dataToWrite);
+    return 0;
 }
 
-void readFromDev()
+int readFromDev()
 {
     memset(nlh, 0, NLMSG_SPACE(MAX_PAYLOAD));
 
     rc = recvmsg(sock_fd, &msg, 0);
     if (rc < 0)
     {
-        printf("sendmsg(): %s\n", strerror(errno));
+        printf("send: %s\n", strerror(errno));
         close(sock_fd);
-        return;
+        return 1;
     }
    // printf("Received from kernel: %s\n", NLMSG_DATA(nlh));
+   return 0;
 }
 
 int main(int argc, char **argv)
 {
     clock_t t;
     double time_taken;
-
-    sock_fd = socket(PF_NETLINK, SOCK_RAW, NETLINK_PORT);
-    if (sock_fd < 0)
-    {
-        printf("socket: %s\n", strerror(errno));
-        return 1;
-    }
+    int e = 0;
     prepareData();
+    if (e = networkSetup())
+        return e;
 
     t = clock();
-    writeToDev();
+    e = writeToDev();
     t = clock() - t;
     time_taken = ((double)t) / CLOCKS_PER_SEC;
-    printf("Cas na vykonanie zapisu: %fus\n", time_taken * 1000000);
+    if (e)
+    {
+        printf("Error during writing.");
+        goto freeall;
+    }
+    else
+    {
+        printf("Time to write: %fus\n", time_taken * 1000000);       
+    }
 
     t = clock();
-    readFromDev();
+    e = readFromDev();
     t = clock() - t;
     time_taken = ((double)t) / CLOCKS_PER_SEC;
-    printf("Cas na vykonanie citania: %fus\n", time_taken * 1000000);
+    if (e)
+    {   
+       printf("Error during reading.");
+       goto freeall;
+    }
+    else
+    {
+        printf("Time to read: %fus\n", time_taken * 1000000);
+    }
 
-    /* Close Netlink Socket */
+    return 0;
+freeall:
     close(sock_fd);
     free(dataToWrite);
     free(dataToRead);
-
-    return 0;
+    return 2;
 }
