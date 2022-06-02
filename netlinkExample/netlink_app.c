@@ -113,7 +113,7 @@ int main(int argc, char **argv)
     int e = 0;
     prepareData();
     if (e = networkSetup())
-        return e;
+        goto freeall;
 
     t = clock();
     e = writeToDev();
@@ -148,5 +148,5 @@ freeall:
     close(sock_fd);
     free(dataToWrite);
     free(dataToRead);
-    return 2;
+    return e;
 }

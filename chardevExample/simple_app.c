@@ -3,7 +3,7 @@
 #include <string.h>
 #include <fcntl.h>
 #include <time.h>
-  
+
 clock_t start, end;
 double cpu_time_used;
 
@@ -14,65 +14,93 @@ int offset = 0;
 char *dataToWrite;
 char *dataToRead;
 
-void prepareData(){
-    dataToWrite = (char*)malloc(SIZE*sizeof(char));    
+void prepareData()
+{
+    fd = open(DEVICE, O_RDWR);
+
+    dataToWrite = (char *)malloc(SIZE * sizeof(char));
     int i;
-    for (i=0; i < SIZE;i++)
+    for (i = 0; i < SIZE; i++)
     {
-        dataToWrite[i] = 'A'+(char)(i%26);
+        dataToWrite[i] = 'A' + (char)(i % 26);
     }
     dataToWrite[SIZE] = '\0';
-    dataToRead = (char*)malloc(SIZE*sizeof(char));
-    memset(dataToRead, 0, sizeof(dataToRead));
-
-    fd = open(DEVICE, O_RDWR);
+    dataToRead = (char *)malloc(SIZE * sizeof(char));
+    memset(dataToRead, 0, sizeof(dataToRead));    
 }
 
-void writeToDev() {   
-    ssize_t res;         
+int writeToDev()
+{
+    ssize_t res;
     res = write(fd, dataToWrite, strlen(dataToWrite), &offset);
-    if (res == -1)
-        printf("Zapisovanie sa nepodarilo...\n");    
-   // printf("Zapisanych: %liB ...\n", res);   
+    if (res == -1){
+        printf("Zapisovanie sa nepodarilo...\n");
+        return res;
+    }
+    // printf("Zapisanych: %liB ...\n", res);
+    return 0;
 }
 
-void readFromDev() {
-    ssize_t res;        
-    res = read(fd, dataToRead, SIZE, &offset);    
-    if (res == -1)
+int readFromDev()
+{
+    ssize_t res;
+    res = read(fd, dataToRead, SIZE, &offset);
+    if (res == -1){
         printf("citanie sa nepodarilo\n");
-    //printf("Precitaných: %liB ... \n",res);
+        return res;
+    }
+    // printf("Precitaných: %liB ... \n",res);
+    return 0;
 }
 
 int main(int argc, char const *argv[])
 {
     clock_t t;
     double time_taken;
+    int e = 0;
 
-    if (access(DEVICE, F_OK) == -1){
-    
+    if (access(DEVICE, F_OK) == -1)
+    {
+
         printf("Module %s not loaded... Close\n", DEVICE);
-        return 0;
+        e = 1;
+        goto freeall;
     }
-    printf("Module %s loaded... \n", DEVICE);   
+    printf("Module %s loaded... \n", DEVICE);
     prepareData();
 
     t = clock();
-    writeToDev(); 
+    e = writeToDev();
     t = clock() - t;
-    time_taken = ((double)t)/CLOCKS_PER_SEC;
-    printf("Cas na vykonanie zapisu: %fus\n", time_taken*1000000);  
+    time_taken = ((double)t) / CLOCKS_PER_SEC;
+    if (e)
+    {
+        printf("Error during reading.");
+        goto freeall;
+    }
+    else
+    {
+        printf("Time to write: %fus\n", time_taken * 1000000);
+    }
 
-      
     t = clock();
-    readFromDev();
+    e = readFromDev();
     t = clock() - t;
-    time_taken = ((double)t)/CLOCKS_PER_SEC;
-    printf("Cas na vykonanie citania: %fus\n", time_taken*1000000);     
+    time_taken = ((double)t) / CLOCKS_PER_SEC;
+    if (e)
+    {
+        printf("Error during reading.");
+        goto freeall;
+    }
+    else
+    {
+        printf("Time to read: %fus\n", time_taken * 1000000);
+    }
 
-
+    return 0;
+freeall:
     close(fd);
     free(dataToWrite);
     free(dataToRead);
-    return 0;
+    return e;
 }
