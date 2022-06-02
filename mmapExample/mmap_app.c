@@ -21,7 +21,7 @@ void prepareData(){
     int i;
     for (i=0; i < SIZE;i++)
     {
-        dataToWrite[i] = 'A'+(char)(i%24);
+        dataToWrite[i] = 'A'+(char)(i%26);
     }
     dataToWrite[SIZE] = '\0';
     if (fd >= 0)

@@ -1,62 +1,51 @@
-#include <linux/init.h>
+#include <linux/init.h> 
 #include <linux/module.h>
 #include <linux/kernel.h>
-#include <linux/semaphore.h>  
-#include <linux/uaccess.h> 
+#include <linux/device.h>
+#include <linux/printk.h>
+#include <linux/kobject.h>
+#include <linux/sysfs.h>
 #include <linux/fs.h>
+#include <linux/string.h>
 
-#define MY_MAJOR 44
-#define MY_MAX_MINORS 5
-#define BUFFER_SIZE 4096
-#define NAME "vfs_exmaple"
+#define MAX_SIZE (PAGE_SIZE*2)
+#define NAME "vfs_module"
 
+static struct kobject *example_kobject;
+static int value;
 
-static char device_buffer[BUFFER_SIZE];
-
-int open(struct inode *pinode, struct file *pfile)
+static ssize_t value_show(struct kobject *kobj, struct kobj_attribute *attr, char *buf)
 {
-    printk(KERN_INFO "%s: %s\n", NAME,  __FUNCTION__);
-    return 0;
+    return sprintf(buf, "%d\n", value);
 }
 
-ssize_t read(struct file *pfile, char __user *buffer, size_t length, loff_t *offset)
+static ssize_t value_store(struct kobject *kobj, struct kobj_attribute *attr, const char *buf, size_t count)
 {
-    printk(KERN_INFO "%s: %s\n",NAME, __FUNCTION__);
-    return 0;
+    sscanf(buf, "%du", &value);
+    return count;
 }
 
-ssize_t write(struct file *pfile, const char __user *buffer, size_t length, loff_t *offset)
-{
-    printk(KERN_INFO "%s: %s\n",NAME, __FUNCTION__);
-    return 0;
-}
-
-int close(struct inode *pinode, struct file *pfile)
-{    
-    printk(KERN_INFO "%s: %s\n",NAME, __FUNCTION__);
-    return 0;
-}
-
-// Štruktúra obsahuje vyžšie definované funkcie.
-struct file_operations my_file_operations = {
-    .owner = THIS_MODULE,
-    .open = open,
-    .read = read,
-    .write = write,
-    .release = close,
-};
+static struct kobj_attribute value_attribute = __ATTR(value, 0755, value_show, value_store);
 
 int vfs_module_init(void)
 {
-    register_chrdev(MY_MAJOR, NAME, &my_file_operations);
     printk(KERN_INFO "%s: %s\n", NAME, __FUNCTION__);
-    return 0;
+    int e;
+    example_kobject = kobject_create_and_add("my_value", kernel_kobj);
+    if(!example_kobject)
+        return -ENOMEM;
+
+    e = sysfs_create_file(example_kobject, &value_attribute.attr);
+    if (e){
+        pr_debug("failed to create the value file");
+    }
+    return e;
 }
 
 void vfs_module_exit(void)
-{
-    unregister_chrdev(MY_MAJOR, NAME);
+{	
     printk(KERN_INFO "%s: %s\n", NAME, __FUNCTION__);
+    kobject_put(example_kobject);
 }
 
 module_init(vfs_module_init);

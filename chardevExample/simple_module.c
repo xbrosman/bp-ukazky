@@ -16,17 +16,18 @@ struct semaphore sem;
 
 int open(struct inode *pinode, struct file *pfile)
 {
+    printk(KERN_INFO "%s: %s\n", NAME,  __FUNCTION__);
     if (down_interruptible(&sem) != 0)
     {
         printk(KERN_ALERT "%s: Device is already opened in other device. Can not open.\n", NAME);
         return -1;
     }
-    printk(KERN_INFO "%s: %s\n", NAME,  __FUNCTION__);
     return 0;
 }
 
 ssize_t read(struct file *pfile, char __user *buffer, size_t length, loff_t *offset)
 {
+    printk(KERN_INFO "%s: %s, read: %dB\n",NAME, __FUNCTION__, bytes_read);
     int b_max;
     int bytes_to_read;
     int bytes_read;
@@ -41,12 +42,12 @@ ssize_t read(struct file *pfile, char __user *buffer, size_t length, loff_t *off
     bytes_read = bytes_to_read - copy_to_user(buffer, device_buffer + *offset, bytes_to_read);
     *offset += bytes_read;
 
-    printk(KERN_INFO "%s: %s, read: %dB\n",NAME, __FUNCTION__, bytes_read);
     return bytes_read;
 }
 
 ssize_t write(struct file *pfile, const char __user *buffer, size_t length, loff_t *offset)
 {
+    printk(KERN_INFO "%s: %s, written: %dB\n", NAME, __FUNCTION__, bytes_writen);
     int b_max;
     int bytes_to_write;
     int bytes_writen;
@@ -59,14 +60,13 @@ ssize_t write(struct file *pfile, const char __user *buffer, size_t length, loff
     bytes_writen = bytes_to_write - copy_from_user(device_buffer + *offset, buffer, bytes_to_write);
     *offset += bytes_writen;
 
-    printk(KERN_INFO "%s: %s, written: %dB\n", NAME, __FUNCTION__, bytes_writen);
     return bytes_writen;
 }
 
 int close(struct inode *pinode, struct file *pfile)
 {    
-    up(&sem);
     printk(KERN_INFO "%s: %s\n",NAME, __FUNCTION__);
+    up(&sem);
     return 0;
 }
 
@@ -81,16 +81,16 @@ struct file_operations my_file_operations = {
 
 int simple_module_init(void)
 {
+    printk(KERN_INFO "%s: %s\n", NAME, __FUNCTION__);
     sema_init(&sem, 1);
     register_chrdev(MY_MAJOR, NAME, &my_file_operations);
-    printk(KERN_INFO "%s: %s\n", NAME, __FUNCTION__);
     return 0;
 }
 
 void simple_module_exit(void)
 {
-    unregister_chrdev(MY_MAJOR, NAME);
     printk(KERN_INFO "%s: %s\n", NAME, __FUNCTION__);
+    unregister_chrdev(MY_MAJOR, NAME);
 }
 
 module_init(simple_module_init);

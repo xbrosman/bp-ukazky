@@ -7,43 +7,36 @@
 clock_t start, end;
 double cpu_time_used;
 
-#define DEVICE "/dev/vfs_module"
+#define DEVICE "/sys/kernel/my_value/value"
 #define SIZE 4096
 int fd = 0;
 int offset = 0;
-char *dataToWrite;
+char dataToWrite;
 char *dataToRead;
 
 void prepareData(){
-    dataToWrite = (char*)malloc(SIZE*sizeof(char));    
-    int i;
-    for (i=0; i < SIZE;i++)
-    {
-        dataToWrite[i] = 'A'+(char)(i%24);
-    }
-    dataToWrite[SIZE] = '\0';
+    dataToWrite = 1;    
     dataToRead = (char*)malloc(SIZE*sizeof(char));
     memset(dataToRead, 0, sizeof(dataToRead));
 
     fd = open(DEVICE, O_RDWR);
+    printf("%i\n", fd);
 }
 
 void writeToDev() {   
     ssize_t res;         
-    // communication here        
-    // res = write(fd, dataToWrite, strlen(dataToWrite), &offset);
+    res = write(fd, &dataToWrite, sizeof(dataToWrite), &offset);
     if (res == -1)
-        printf("Zapisovanie sa nepodarilo...\n");    
-   // printf("Zapisanych: %liB ...\n", res);   
+        printf("Zapisovanie sa nepodarilo...\n");  
+    printf("Zapisanych: %liB %i...\n", res, dataToWrite);   
 }
 
 void readFromDev() {
-    ssize_t res;
-    // communication here        
-    // res = read(fd, dataToRead, SIZE, &offset);    
+    ssize_t res;         
+    res = read(fd, dataToRead, SIZE, &offset);    
     if (res == -1)
         printf("citanie sa nepodarilo\n");
-    //printf("Precitaných: %liB ... \n",res);
+    printf("Precitaných: %liB %i... \n",res, dataToRead);
 }
 
 int main(int argc, char const *argv[])
@@ -74,7 +67,6 @@ int main(int argc, char const *argv[])
 
 
     close(fd);
-    free(dataToWrite);
     free(dataToRead);
     return 0;
 }
