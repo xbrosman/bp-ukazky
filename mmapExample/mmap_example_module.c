@@ -36,7 +36,7 @@ int close(struct inode *pinode, struct file *pfile)
 
 static ssize_t read(struct file *pfile, char __user *buffer, size_t length, loff_t *offset)
 {
-    printk(KERN_INFO "%s: %s, read: %dB\n",NAME, __FUNCTION__, bytes_read);
+    printk(KERN_INFO "%s: %s\n",NAME, __FUNCTION__);
     int b_max;
     int bytes_to_read;
     int bytes_read;
@@ -56,7 +56,7 @@ static ssize_t read(struct file *pfile, char __user *buffer, size_t length, loff
 
 static ssize_t write(struct file *pfile, const char __user *buffer, size_t length, loff_t *offset)
 {
-    printk(KERN_INFO "%s: %s, written: %dB\n", NAME, __FUNCTION__, bytes_writen);
+    printk(KERN_INFO "%s: %s\n", NAME, __FUNCTION__);
     int b_max;
     int bytes_to_write;
     int bytes_writen;
