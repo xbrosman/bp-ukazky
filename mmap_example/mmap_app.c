@@ -1,5 +1,6 @@
 /*
-
+    bp_komunikacia/mmap_example/mmap_app.c
+    Author: Filip Brosman
 */
 #include <stdio.h>
 #include <malloc.h>

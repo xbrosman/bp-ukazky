@@ -1,5 +1,9 @@
 /*
+    Function networkSetup taken from: https://github.com/mwarning/netlink-examples/blob/master/unicast_example/nl_recv.c
+    Author: Moritz Warning
 
+    bp_komunikacia/netlink_example/netlink_app.c
+    Author: Filip Brosman
 */
 #include <stdlib.h>
 #include <stdio.h>

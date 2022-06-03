@@ -1,5 +1,6 @@
 /*
-
+    bp_komunikacia/chardev_example/simple_app.c
+    Author: Filip Brosman
 */
 #include <stdio.h>
 #include <malloc.h>
@@ -64,7 +65,6 @@ int main(int argc, char const *argv[])
 
     if (access(DEVICE, F_OK) == -1)
     {
-
         printf("Module %s not loaded... Close\n", DEVICE);
         e = 1;
         goto freeall;

@@ -1,5 +1,6 @@
 /*
-
+    bp_komunikacia/vfs_example/vfs_app.c
+    Author: Filip Brosman
 */
 #include <stdio.h>
 #include <malloc.h>
