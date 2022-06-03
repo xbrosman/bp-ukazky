@@ -3,4 +3,4 @@ echo "Building..."
 gcc vfs_app.c -o vfs_app.app
 echo "Build done..."
 echo "Run vfs_app.app...\n"
-./vfs_app.app
+sudo ./vfs_app.app

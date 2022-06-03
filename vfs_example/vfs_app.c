@@ -33,7 +33,7 @@ int writeToDev()
     ssize_t res;
     res = write(fd, &dataToWrite, sizeof(dataToWrite), &offset);
     if (res == -1){
-        printf("Error during write()...\n");
+        printf("Error during write...\n");
         return 1;
     }
     //printf("Zapisanych: %liB %i...\n", res, dataToWrite);
@@ -45,7 +45,7 @@ int readFromDev()
     ssize_t res;
     res = read(fd, dataToRead, SIZE, &offset);
     if (res == -1){
-        printf("Error during read()...\n");
+        printf("Error during read...\n");
         return 1;
     }
     //printf("Precitaných: %liB %i... \n", res, dataToRead);
@@ -74,7 +74,7 @@ int main(int argc, char const *argv[])
     time_taken = ((double)t) / CLOCKS_PER_SEC;
     if (e)
     {
-        printf("Error during reading.");
+        printf("Error during reading.\n");
         goto freeall;
     }
     else
@@ -88,7 +88,7 @@ int main(int argc, char const *argv[])
     time_taken = ((double)t) / CLOCKS_PER_SEC;
     if (e)
     {
-        printf("Error during reading.");
+        printf("Error during reading.\n");
         goto freeall;
     }
     else

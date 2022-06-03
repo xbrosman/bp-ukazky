@@ -34,13 +34,12 @@ static ssize_t value_store(struct kobject *kobj, struct kobj_attribute *attr, co
     return count;
 }
 
-
+static struct kobj_attribute value_attribute = __ATTR(value, 0660 , value_show, value_store);
 
 int vfs_module_init(void)
 {
     printk(KERN_INFO "%s: %s\n", NAME, __FUNCTION__);
     int e;
-    static struct kobj_attribute value_attribute = __ATTR(value, 0660, value_show, value_store);
     example_kobject = kobject_create_and_add("my_value", kernel_kobj);
     if(!example_kobject)
         return -ENOMEM;
