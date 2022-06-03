@@ -1,4 +1,14 @@
 /*
+    SPDX-License-Identifier: GPL-2.0
+    bp_komunikacia/mmap_example/mmap_example_module.c
+    
+    Functions read, write taken from github: https://gist.github.com/ksvbka/0cd1a31143c1003ce6c7
+    Author: Anil Kumar Pugalia <email@sarika-pugs.com>
+
+    Function taken from github: https://gist.github.com/laoar/4a7110dcd65dbf2aefb3231146458b39
+    Author: Yafang Shao
+
+    Modified by Filip Brosman
 
 */
 #include <linux/module.h>
@@ -15,14 +25,14 @@
 #define MAX_SIZE (PAGE_SIZE*2)
 #define NAME "mmap_example_module"
 
-static DEFINE_MUTEX(mchar_mutex);
+static DEFINE_MUTEX(mmap_mutex);
 
 static char *device_buffer;
 
 static int open(struct inode *pinode, struct file *pfile)
 {
     printk(KERN_INFO "%s: %s\n", NAME,  __FUNCTION__);
-    if(!mutex_trylock(&mchar_mutex)) {
+    if(!mutex_trylock(&mmap_mutex)) {
         printk(KERN_ALERT "%s: Device is already opened in other device. Can not open.\n", NAME);
 		return -1;
     }
@@ -32,8 +42,8 @@ static int open(struct inode *pinode, struct file *pfile)
 int close(struct inode *pinode, struct file *pfile)
 {    
 	printk(KERN_INFO "%s: %s\n",NAME, __FUNCTION__);
-	if (mutex_is_locked(&mchar_mutex))
-		mutex_unlock(&mchar_mutex);
+	if (mutex_is_locked(&mmap_mutex))
+		mutex_unlock(&mmap_mutex);
     return 0;
 }
 
@@ -95,7 +105,6 @@ static int mmap(struct file *filp, struct vm_area_struct *vma)
     return ret;
 }
 
-// Štruktúra obsahuje vyžšie definované funkcie.
 struct file_operations my_file_operations = {
     .owner = THIS_MODULE,
     .open = open,
@@ -109,18 +118,18 @@ int mmap_module_init(void)
 {
     printk(KERN_INFO "%s: %s\n", NAME, __FUNCTION__);
 	device_buffer = kmalloc(MAX_SIZE, GFP_KERNEL);
-    char *text = "Test spojenia s jadrom\0";
+    char *text = "Message from kernel\0";
     memcpy(device_buffer,text , strlen(text)*sizeof(char));
 
     register_chrdev(MY_MAJOR, NAME, &my_file_operations);
-	mutex_init(&mchar_mutex);
+	mutex_init(&mmap_mutex);
     return 0;
 }
 
 void mmap_module_exit(void)
 {	
     printk(KERN_INFO "%s: %s\n", NAME, __FUNCTION__);
-	mutex_destroy(&mchar_mutex);
+	mutex_destroy(&mmap_mutex);
     unregister_chrdev(MY_MAJOR, NAME);
 }
 

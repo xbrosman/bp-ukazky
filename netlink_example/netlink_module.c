@@ -1,5 +1,10 @@
 /*
+    SPDX-License-Identifier: GPL-2.0
+    bp_komunikacia/netlink_example/netlink_module.c
+    Module taken from: https://github.com/mwarning/netlink-examples/tree/master/unicast_example
+    Author: Moritz Warning
 
+    Modified by Filip Brosman
 */
 #include <linux/init.h>
 #include <linux/module.h>

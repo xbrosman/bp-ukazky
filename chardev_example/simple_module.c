@@ -1,4 +1,10 @@
 /*
+    SPDX-License-Identifier: GPL-2.0
+    bp_komunikacia/chardev_example/simple_module.c
+
+    Functions read, write taken from github: https://gist.github.com/ksvbka/0cd1a31143c1003ce6c7
+    Author: Anil Kumar Pugalia <email@sarika-pugs.com>
+    Modified by Filip Brosman
 
 */
 #include <linux/init.h>

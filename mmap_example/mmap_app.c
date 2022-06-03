@@ -40,7 +40,7 @@ int writeToDev()
     if (fd >= 0)
     {
         memcpy(p, dataToWrite, strlen(dataToWrite));
-        printf("File descriptor %d, Writen: %ld\n", fd, strlen(p));
+        //printf("File descriptor %d, Writen: %ld\n", fd, strlen(p));
         return 0;
     }
     return 2;
@@ -50,9 +50,8 @@ int readFromDev()
 {
     if (fd >= 0)
     {
-        if (p)
-            printf("File descriptor %d, read: %ld\n", fd, strlen(p));
-        return 0;
+        if (p)           
+         return 0;
     }
     return 2;
 }
