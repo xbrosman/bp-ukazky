@@ -1,3 +1,6 @@
+/*
+
+*/
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -33,23 +36,21 @@ int networkSetup()
 
     memset(&src_addr, 0, sizeof(src_addr));
     src_addr.nl_family = AF_NETLINK;
-    src_addr.nl_pid = getpid(); /* self pid */
-    src_addr.nl_groups = 0;     /* not in mcast groups */
+    src_addr.nl_pid = getpid();
+    src_addr.nl_groups = 0;
     bind(sock_fd, (struct sockaddr *)&src_addr, sizeof(src_addr));
 
     memset(&dest_addr, 0, sizeof(dest_addr));
     dest_addr.nl_family = AF_NETLINK;
-    dest_addr.nl_pid = 0;    /* For Linux Kernel */
-    dest_addr.nl_groups = 0; /* unicast */    
+    dest_addr.nl_pid = 0;
+    dest_addr.nl_groups = 0; 
 
     nlh = (struct nlmsghdr *)malloc(NLMSG_SPACE(MAX_PAYLOAD));
 
-    /* Fill the netlink message header */
     nlh->nlmsg_len = NLMSG_SPACE(MAX_PAYLOAD);
-    nlh->nlmsg_pid = getpid(); /* self pid */
+    nlh->nlmsg_pid = getpid();
     nlh->nlmsg_flags = 0;
 
-    /* Fill in the netlink message payload */
     strcpy(NLMSG_DATA(nlh), dataToWrite);
 
     memset(&iov, 0, sizeof(iov));

@@ -1,57 +1,54 @@
+/*
+
+*/
 #include <stdio.h>
 #include <malloc.h>
 #include <string.h>
 #include <fcntl.h>
-#include <sys/mman.h>
 #include <time.h>
 
 clock_t start, end;
 double cpu_time_used;
 
-#define DEVICE "/dev/mmap_example_module"
-#define P_SIZE 4096
+#define DEVICE "/sys/kernel/my_value/value"
 #define SIZE 4096
 int fd = 0;
 int offset = 0;
-char *dataToWrite;
-char *p = NULL;
+char dataToWrite;
+char *dataToRead;
 
 void prepareData()
 {
     fd = open(DEVICE, O_RDWR);
-    dataToWrite = (char *)malloc(SIZE * sizeof(char));
-    int i;
-    for (i = 0; i < SIZE; i++)
-    {
-        dataToWrite[i] = 'A' + (char)(i % 26);
-    }
-    dataToWrite[SIZE] = '\0';
-    if (fd >= 0)
-        p = (char *)mmap(0, P_SIZE, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
-    else
-        printf("Bad File descriptor %d, not opened\n", fd);    
+    printf("%i\n", fd);
+
+    dataToWrite = 1;
+    dataToRead = (char *)malloc(SIZE * sizeof(char));
+    memset(dataToRead, 0, sizeof(dataToRead));   
 }
 
 int writeToDev()
 {
-    if (fd >= 0)
-    {
-        memcpy(p, dataToWrite, strlen(dataToWrite));
-        printf("File descriptor %d, Writen: %ld\n", fd, strlen(p));
-        return 0;
+    ssize_t res;
+    res = write(fd, &dataToWrite, sizeof(dataToWrite), &offset);
+    if (res == -1){
+        printf("Error during write()...\n");
+        return 1;
     }
-    return 2;
+    //printf("Zapisanych: %liB %i...\n", res, dataToWrite);
+    return 0;
 }
 
 int readFromDev()
 {
-    if (fd >= 0)
-    {
-        if (p)
-            printf("File descriptor %d, read: %ld\n", fd, strlen(p));
-        return 0;
+    ssize_t res;
+    res = read(fd, dataToRead, SIZE, &offset);
+    if (res == -1){
+        printf("Error during read()...\n");
+        return 1;
     }
-    return 2;
+    //printf("Precitaných: %liB %i... \n", res, dataToRead);
+    return 0;
 }
 
 int main(int argc, char const *argv[])
@@ -62,13 +59,13 @@ int main(int argc, char const *argv[])
 
     if (access(DEVICE, F_OK) == -1)
     {
+
         printf("Module %s not loaded... Close\n", DEVICE);
         e = 1;
         goto freeall;
     }
-    printf("Module %s loaded... \n", DEVICE);   
+    printf("Module %s loaded... \n", DEVICE);
     prepareData();
-    printf("File descriptor %d, Writen: %ld, Message from kernel: %s\n", fd, strlen(p), p);
 
     t = clock();
     e = writeToDev();
@@ -97,14 +94,12 @@ int main(int argc, char const *argv[])
     {
         printf("Time to read: %fus\n", time_taken * 1000000);
     }
-    return 0;
-    close(fd);
-    free(dataToWrite);
-    free(p);
 
+    close(fd);
+    free(dataToRead);
+    return 0;
 freeall:
     close(fd);
-    free(dataToWrite);
-    free(p);
+    free(dataToRead);
     return e;
 }

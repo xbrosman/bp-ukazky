@@ -1,3 +1,6 @@
+/*
+
+*/
 #include <linux/init.h> 
 #include <linux/module.h>
 #include <linux/kernel.h>
@@ -25,7 +28,7 @@ static ssize_t value_store(struct kobject *kobj, struct kobj_attribute *attr, co
     return count;
 }
 
-static struct kobj_attribute value_attribute = __ATTR(value, 0666, value_show, value_store);
+static struct kobj_attribute value_attribute = __ATTR(value, 0660, value_show, value_store);
 
 int vfs_module_init(void)
 {
