@@ -16,7 +16,7 @@
 
 #define MY_MAJOR 42
 #define MY_MAX_MINORS 5
-#define BUFFER_SIZE 4096
+#define BUFFER_SIZE 250*4096    // 1MB Dát
 #define NAME "Simple_chardev"
 
 
@@ -40,7 +40,7 @@ ssize_t read(struct file *pfile, char __user *buffer, size_t length, loff_t *off
     int b_max;
     int bytes_to_read;
     int bytes_read;
-    b_max = BUFFER_SIZE - *offset;
+    b_max = BUFFER_SIZE;
     if (b_max > length)
         bytes_to_read = length;
     else
@@ -54,7 +54,7 @@ ssize_t read(struct file *pfile, char __user *buffer, size_t length, loff_t *off
     return bytes_read;
 }
 
-ssize_t write(struct file *pfile, const char __user *buffer, size_t length, loff_t *offset)
+ssize_t write(struct file *pfile, const char *buffer, size_t length, loff_t *offset)
 {
     printk(KERN_INFO "%s: %s\n", NAME, __FUNCTION__);
     int b_max;
@@ -68,7 +68,7 @@ ssize_t write(struct file *pfile, const char __user *buffer, size_t length, loff
 
     bytes_writen = bytes_to_write - copy_from_user(device_buffer + *offset, buffer, bytes_to_write);
     *offset += bytes_writen;
-
+    // printk(KERN_INFO "%s: %iB, %iB\n",NAME, bytes_to_write, bytes_writen);
     return bytes_writen;
 }
 

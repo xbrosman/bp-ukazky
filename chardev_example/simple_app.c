@@ -12,7 +12,7 @@ clock_t start, end;
 double cpu_time_used;
 
 #define DEVICE "/dev/simple_chardev"
-#define SIZE 4096
+#define SIZE 250*4096
 int fd = 0;
 int offset = 0;
 char *dataToWrite;
@@ -20,8 +20,6 @@ char *dataToRead;
 
 void prepareData()
 {
-    fd = open(DEVICE, O_RDWR);
-
     dataToWrite = (char *)malloc(SIZE * sizeof(char));
     int i;
     for (i = 0; i < SIZE; i++)
@@ -41,7 +39,7 @@ int writeToDev()
         printf("Zapisovanie sa nepodarilo...\n");
         return res;
     }
-    // printf("Zapisanych: %liB ...\n", res);
+    printf("Zapisanych: %liB ...\n", res);
     return 0;
 }
 
@@ -53,7 +51,7 @@ int readFromDev()
         printf("citanie sa nepodarilo\n");
         return res;
     }
-    // printf("Precitaných: %liB ... \n",res);
+    printf("Precitaných: %liB ... \n",res);
     return 0;
 }
 
@@ -70,6 +68,7 @@ int main(int argc, char const *argv[])
         goto freeall;
     }
     printf("Module %s loaded... \n", DEVICE);
+    fd = open(DEVICE, O_RDWR);
     prepareData();
 
     t = clock();
