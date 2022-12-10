@@ -7,6 +7,7 @@
 #include <string.h>
 #include <fcntl.h>
 #include <time.h>
+#include <unistd.h>
 
 clock_t start, end;
 double cpu_time_used;
@@ -15,42 +16,135 @@ double cpu_time_used;
 #define SIZE 4096
 int fd = 0;
 int offset = 0;
-char dataToWrite;
+char *dataToWrite;
 char *dataToRead;
 
-void prepareData()
+int openDev(char *device);
+void prepareData(int size);
+int writeToDev();
+int readFromDev();
+double measureFuncDuration(int (*func_ptr)(void));
+
+int main(int argc, char const *argv[])
+{
+    int e;
+    double time;
+
+    int n;
+
+    double sumRead;
+    double avgRead;
+
+    double sumWrite;
+    double avgWrite;
+
+    if ((e = openDev(DEVICE)) != 0)
+    {
+        return e;
+    }
+
+    prepareData(SIZE/4);
+    for (int i = 0; i < 10; i++)
+    {
+        measureFuncDuration(&writeToDev);
+    }
+    for (int i = 0; i < 10; i++)
+    {
+        measureFuncDuration(&readFromDev);
+    }
+
+    printf("\n");
+
+    for (n = 0; n < 1; n++)
+    {
+        prepareData(n * SIZE);
+
+        time = measureFuncDuration(&writeToDev);
+        if (time != -1)
+        {
+            sumWrite = time;
+            printf("Time to write: %lfus\n", time);
+        }
+        else
+        {
+            return time;
+        }
+
+        time = measureFuncDuration(&readFromDev);
+        if (time != -1)
+        {
+            sumRead = time;
+            printf("Time to read: %lfus\n", time);
+        }
+        else
+        {
+            return time;
+        }
+    }
+
+    avgWrite = (sumWrite / n);
+    avgRead = (sumRead / n);
+
+    printf("\nN: %i\nSum write: %lf\nSum read: %lf\n", n, sumWrite, sumRead);
+
+    printf("\nAvg write: %lf\n", avgWrite);
+    printf("Avg read: %lf\n", avgRead);
+
+    close(fd);
+    free(dataToRead);
+    return 0;
+freeall:
+    close(fd);
+    free(dataToRead);
+    return e;
+}
+
+int openDev(char *device)
 {
     fd = open(DEVICE, O_RDWR);
-    printf("%i\n", fd);
+    printf("fd: %i\n", fd);
+    if (access(device, F_OK) == -1)
+    {
+        printf("Module %s not loaded... Close\n", device);
+        return -2;
+    }
+    printf("Module %s loaded... \n", DEVICE);
+    return 0;
+}
 
-    dataToWrite = 1;
-    dataToRead = (char *)malloc(SIZE * sizeof(char));
+void prepareData(int size)
+{
+
+    dataToWrite = (char *)malloc(size * sizeof(char));
+    memset(dataToWrite, (char)65, sizeof(dataToWrite));
+
+    dataToRead = (char *)malloc(size * sizeof(char));
     memset(dataToRead, 0, sizeof(dataToRead));
 }
 
 int writeToDev()
 {
     ssize_t res;
-    res = write(fd, &dataToWrite, sizeof(dataToWrite), &offset);
+    res = write(fd, &dataToWrite, sizeof(dataToWrite));
     if (res == -1)
     {
         printf("Error during write...\n");
         return -1;
     }
-    // printf("Zapisanych: %liB %i...\n", res, dataToWrite);
+    printf("Zapisanych: %liB %s...\n", res, dataToWrite);
     return 0;
 }
 
 int readFromDev()
 {
     ssize_t res;
-    res = read(fd, dataToRead, SIZE, &offset);
+    res = read(fd, &dataToRead, sizeof(dataToRead));
     if (res == -1)
     {
         printf("Error during read...\n");
         return -1;
     }
-    // printf("Precitaných: %liB %i... \n", res, dataToRead);
+    printf("Precitaných: %liB %s... \n", res, dataToRead);
     return 0;
 }
 
@@ -65,60 +159,9 @@ double measureFuncDuration(int (*func_ptr)(void))
     t = clock() - t;
     time_taken = ((double)t) / CLOCKS_PER_SEC;
     if (e == -1)
+    {
+        printf("Error in __FUNCTION__ = %s\n", __FUNCTION__);
         return -1;
+    }
     return time_taken;
-}
-
-int openDev(char *device)
-{
-    if (access(device, F_OK) == -1)
-    {
-        printf("Module %s not loaded... Close\n", device);
-        return -2;
-    }
-    printf("Module %s loaded... \n", DEVICE);
-    return 0;
-}
-
-int main(int argc, char const *argv[])
-{
-    int e;
-    double time;
-
-    if ((e = openDev(DEVICE)) != 0)
-    {
-        return e;
-    }
-    prepareData();
-
-    time = measureFuncDuration(&writeToDev);
-
-    if (time == -1)
-    {
-        printf("Error during write.\n");
-        goto freeall;
-    }
-    else
-    {
-        printf("Time to write: %fus\n", time * 1000000);
-    }
-
-    time = measureFuncDuration(&readFromDev);
-    if (time == -1)
-    {
-        printf("Error during reading.\n");
-        goto freeall;
-    }
-    else
-    {
-        printf("Time to read: %fus\n", time * 1000000);
-    }
-
-    close(fd);
-    free(dataToRead);
-    return 0;
-freeall:
-    close(fd);
-    free(dataToRead);
-    return e;
 }
