@@ -16,7 +16,7 @@
 
 #define MY_MAJOR 42
 #define MY_MAX_MINORS 5
-#define BUFFER_SIZE 250*4096    // 1MB Dát
+#define BUFFER_SIZE 256*4096    // 1MB Dát
 #define NAME "Simple_chardev"
 
 
@@ -62,7 +62,7 @@ ssize_t write(struct file *pfile, const char *buffer, size_t length, loff_t *off
 
     bytes_writen = bytes_to_write - copy_from_user(device_buffer + *offset, buffer, bytes_to_write);
     *offset += bytes_writen;
-    // printk(KERN_INFO "%s: %iB, %iB\n",NAME, bytes_to_write, bytes_writen);
+    printk(KERN_INFO "%s: %iB, %iB\n",NAME, bytes_to_write, bytes_writen);
     return bytes_writen;
 }
 
