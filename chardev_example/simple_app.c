@@ -7,103 +7,154 @@
 #include <string.h>
 #include <fcntl.h>
 #include <time.h>
-#include <unistd.h>
 
 clock_t start, end;
 double cpu_time_used;
 
 #define DEVICE "/dev/simple_chardev"
-#define SIZE 250*4096
+#define SIZE 256 * 4096     // 1MB
 int fd = 0;
 int offset = 0;
 char *dataToWrite;
 char *dataToRead;
 
-void prepareData()
-{
-    dataToWrite = (char *)malloc(SIZE * sizeof(char));
-    int i;
-    for (i = 0; i < SIZE; i++)
-    {
-        dataToWrite[i] = 'A' + (char)(i % 26);
-    }
-    dataToWrite[SIZE] = '\0';
-    dataToRead = (char *)malloc(SIZE * sizeof(char));
-    memset(dataToRead, 0, sizeof(dataToRead));    
-}
-
-int writeToDev()
-{
-    ssize_t res;
-    res = write(fd, dataToWrite, strlen(dataToWrite));
-    if (res == -1){
-        printf("Zapisovanie sa nepodarilo...\n");
-        return res;
-    }    
-    return res;
-}
-
-int readFromDev()
-{
-    ssize_t res;
-    res = read(fd, dataToRead, SIZE);
-    if (res == -1){
-        printf("citanie sa nepodarilo\n");
-        return res;
-    }    
-    return res;
-}
+int checkModule();
+char* prepareDataWrite(size_t);
+char* prepareDataRead(size_t);
+void prepareData(size_t);
+int writeToDev();
+int readFromDev();
+double measureFuncDuration(int (*func_ptr)(void));
+int doMeasure();
 
 int main(int argc, char const *argv[])
 {
-    clock_t t;
-    double time_taken;
-    int e = 0;
-
-    if (access(DEVICE, F_OK) == -1)
+    int e;
+    if (e = checkModule(DEVICE) != 0)
     {
-        printf("Module %s not loaded... Close\n", DEVICE);
-        e = 1;
-        goto freeall;
+        return e;
     }
-    printf("Module %s loaded... \n", DEVICE);
-    fd = open(DEVICE, O_RDWR);
-    prepareData();
 
-    t = clock();
-    e = writeToDev();
-    t = clock() - t;
-    time_taken = ((double)t) / CLOCKS_PER_SEC;
-    if (e)
+    fd = open(DEVICE, O_RDWR);
+
+    if (fd == -1)
+    {
+        printf("Error in open file: %i\n", fd);
+        return fd;
+    }
+
+    prepareData(SIZE);
+    doMeasure();
+
+    close(fd);
+    free(dataToWrite);
+    free(dataToRead);
+    return 0;
+}
+
+int doMeasure()
+{
+    double time_taken = measureFuncDuration(writeToDev);
+    printf("Data writen: %s\n", dataToWrite);
+    if (time_taken < 0)
     {
         printf("Error during reading.");
-        goto freeall;
+        return -1;
     }
     else
     {
         printf("Time to write: %fus\n", time_taken * 1000000);
     }
 
-    t = clock();
-    e = readFromDev();
-    t = clock() - t;
-    time_taken = ((double)t) / CLOCKS_PER_SEC;
-    if (e)
+    time_taken = measureFuncDuration(readFromDev);
+    printf("Data read: %s\n", dataToRead);
+    if (time_taken < 0)
     {
         printf("Error during reading.");
-        goto freeall;
+        return -1;
     }
     else
     {
         printf("Time to read: %fus\n", time_taken * 1000000);
     }
-    close(fd);
-    free(dataToWrite);
-    free(dataToRead);
+
+    if (strcmp(dataToRead, dataToWrite) != 0)
+    {
+        printf("Data writen and read are not equal");
+        return -1;
+    }
     return 0;
-freeall:
-    close(fd);
-    free(dataToWrite);
-    free(dataToRead);
-    return e;
+}
+
+int checkModule(char *device)
+{
+    if (access(device, F_OK) == -1)
+    {
+        printf("Module %s not loaded... Close\n", device);
+        return -1; // module not loaded
+    }
+    printf("Module %s loaded... \n", device);
+    return 0;
+}
+
+char* prepareDataWrite(size_t size)
+{
+    char* dataToWrite = (char *)malloc(size * sizeof(char) + 1);
+    memset(dataToWrite, 1, size);
+    dataToWrite[size] = '\0';
+    return dataToWrite;
+}
+
+char* prepareDataRead(size_t size)
+{
+    char* dataToRead = (char *)malloc(size * sizeof(char));
+    memset(dataToRead, 0, sizeof(dataToRead));
+    return dataToRead;
+}
+
+
+void prepareData(size_t size)
+{
+    dataToWrite = prepareDataWrite(size);
+    dataToRead = prepareDataRead(size);
+}
+
+int writeToDev()
+{
+    ssize_t res;
+    res = write(fd, dataToWrite, strlen(dataToWrite), 0);
+    if (res < 0)
+    {
+        printf("Error in write!!!\n");
+    }
+    return res;
+}
+
+int readFromDev()
+{
+    ssize_t res;
+    res = read(fd, dataToRead, SIZE, 0);
+    if (res < 0)
+    {
+        printf("Error in read!!!\n");
+    }
+    return res;
+}
+
+double measureFuncDuration(int (*func_ptr)(void))
+{
+    clock_t t;
+    double time_taken;
+    int e = 0;
+
+    t = clock();
+    e = func_ptr();
+    t = clock() - t;
+    time_taken = ((double)t) / CLOCKS_PER_SEC;
+    if (e < 0)
+    {
+        printf("Error in __FUNCTION__ = %s\n", __FUNCTION__);
+        return e;
+    }
+    return time_taken;
 }
