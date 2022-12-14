@@ -7,6 +7,7 @@
 #include <string.h>
 #include <fcntl.h>
 #include <time.h>
+#include <unistd.h>
 
 clock_t start, end;
 double cpu_time_used;
@@ -34,25 +35,23 @@ void prepareData()
 int writeToDev()
 {
     ssize_t res;
-    res = write(fd, dataToWrite, strlen(dataToWrite), &offset);
+    res = write(fd, dataToWrite, strlen(dataToWrite));
     if (res == -1){
         printf("Zapisovanie sa nepodarilo...\n");
         return res;
-    }
-    printf("Zapisanych: %liB ...\n", res);
-    return 0;
+    }    
+    return res;
 }
 
 int readFromDev()
 {
     ssize_t res;
-    res = read(fd, dataToRead, SIZE, &offset);
+    res = read(fd, dataToRead, SIZE);
     if (res == -1){
         printf("citanie sa nepodarilo\n");
         return res;
-    }
-    printf("Precitaných: %liB ... \n",res);
-    return 0;
+    }    
+    return res;
 }
 
 int main(int argc, char const *argv[])
