@@ -20,7 +20,7 @@
 #define NAME "Simple_chardev"
 
 
-static char device_buffer[BUFFER_SIZE];
+static char device_buffer[BUFFER_SIZE] = {0};
 struct semaphore sem;
 
 int open(struct inode *pinode, struct file *pfile)
@@ -36,22 +36,16 @@ int open(struct inode *pinode, struct file *pfile)
 
 ssize_t read(struct file *pfile, char __user *buffer, size_t length, loff_t *offset)
 {
+    int bytes_read = 0;
     printk(KERN_INFO "%s: %s\n",NAME, __FUNCTION__);
-    int b_max;
-    int bytes_to_read;
-    int bytes_read;
-    b_max = BUFFER_SIZE;
-    if (b_max > length)
-        bytes_to_read = length;
-    else
-        bytes_to_read = b_max;
-    if (bytes_to_read == 0)
-        printk(KERN_INFO "%s: Reached the end of the device\n", NAME);
+   
+    bytes_read = copy_to_user(buffer, device_buffer, length); 
 
-    bytes_read = bytes_to_read - copy_to_user(buffer, device_buffer + *offset, bytes_to_read);
-    *offset += bytes_read;
-
-    return bytes_read;
+    if (bytes_read != 0){
+        printk(KERN_INFO "Error read: %s", __FUNCTION__);
+        return -EFAULT;     // vracia bad address
+    }
+    return length; // vracia pocet prenesenych bytov 
 }
 
 ssize_t write(struct file *pfile, const char *buffer, size_t length, loff_t *offset)
