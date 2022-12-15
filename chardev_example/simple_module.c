@@ -10,8 +10,8 @@
 #include <linux/init.h>
 #include <linux/module.h>
 #include <linux/kernel.h>
-#include <linux/semaphore.h>  
-#include <linux/uaccess.h> 
+#include <linux/semaphore.h>
+#include <linux/uaccess.h>
 #include <linux/fs.h>
 
 #define MY_MAJOR 42
@@ -25,7 +25,7 @@ struct semaphore sem;
 
 int open(struct inode *pinode, struct file *pfile)
 {
-    printk(KERN_INFO "%s: %s\n", NAME,  __FUNCTION__);
+    printk(KERN_INFO "%s: %s\n", NAME, __FUNCTION__);
     if (down_interruptible(&sem) != 0)
     {
         printk(KERN_ALERT "%s: Device is already opened in other device. Can not open.\n", NAME);
@@ -41,11 +41,12 @@ ssize_t read(struct file *pfile, char __user *buffer, size_t length, loff_t *off
    
     bytes_read = copy_to_user(buffer, device_buffer, length); 
 
-    if (bytes_read != 0){
+    if (bytes_read != 0)
+    {
         printk(KERN_INFO "Error read: %s", __FUNCTION__);
-        return -EFAULT;     // vracia bad address
+        return -EFAULT; // vracia bad address
     }
-    return length; // vracia pocet prenesenych bytov 
+    return length; // vracia pocet prenesenych bytov
 }
 
 ssize_t write(struct file *pfile, const char *buffer, size_t length, loff_t *offset)
@@ -62,13 +63,13 @@ ssize_t write(struct file *pfile, const char *buffer, size_t length, loff_t *off
 
     bytes_writen = bytes_to_write - copy_from_user(device_buffer + *offset, buffer, bytes_to_write);
     *offset += bytes_writen;
-    printk(KERN_INFO "%s: %iB, %iB\n",NAME, bytes_to_write, bytes_writen);
+    printk(KERN_INFO "%s: %iB, %iB\n", NAME, bytes_to_write, bytes_writen);
     return bytes_writen;
 }
 
 int close(struct inode *pinode, struct file *pfile)
-{    
-    printk(KERN_INFO "%s: %s\n",NAME, __FUNCTION__);
+{
+    printk(KERN_INFO "%s: %s\n", NAME, __FUNCTION__);
     up(&sem);
     return 0;
 }
