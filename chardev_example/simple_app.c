@@ -7,6 +7,10 @@
 #include <string.h>
 #include <fcntl.h>
 #include <time.h>
+#include <stdarg.h>
+
+
+#define DEBUG 1
 
 clock_t start, end;
 double cpu_time_used;
@@ -18,6 +22,7 @@ int offset = 0;
 char *dataToWrite;
 char *dataToRead;
 
+void printLog(const char* format, ...);
 int checkModule();
 char* prepareDataWrite(size_t);
 char* prepareDataRead(size_t);
@@ -26,6 +31,7 @@ int writeToDev();
 int readFromDev();
 double measureFuncDuration(int (*func_ptr)(void));
 int doMeasure();
+
 
 int main(int argc, char const *argv[])
 {
@@ -39,7 +45,7 @@ int main(int argc, char const *argv[])
 
     if (fd == -1)
     {
-        printf("Error in open file: %i\n", fd);
+        printLog("Error in open file: %i\n", fd);
         return fd;
     }
 
@@ -54,11 +60,11 @@ int main(int argc, char const *argv[])
 
 int doMeasure()
 {
-    double time_taken = measureFuncDuration(writeToDev);
-    printf("Data writen: %s\n", dataToWrite);
+    double time_taken = measureFuncDuration(writeToDev);    
+    printLog("Data writen: %s\n", dataToWrite);
     if (time_taken < 0)
     {
-        printf("Error during reading.");
+        printLog("Error during reading.");
         return -1;
     }
     else
@@ -67,10 +73,10 @@ int doMeasure()
     }
 
     time_taken = measureFuncDuration(readFromDev);
-    printf("Data read: %s\n", dataToRead);
+    printLog("Data read: %s\n", dataToRead);
     if (time_taken < 0)
     {
-        printf("Error during reading.");
+        printLog("Error during reading.");
         return -1;
     }
     else
@@ -80,7 +86,7 @@ int doMeasure()
 
     if (strcmp(dataToRead, dataToWrite) != 0)
     {
-        printf("Data writen and read are not equal");
+        printLog("Data writen and read are not equal");
         return -1;
     }
     return 0;
@@ -90,7 +96,7 @@ int checkModule(char *device)
 {
     if (access(device, F_OK) == -1)
     {
-        printf("Module %s not loaded... Close\n", device);
+        printLog("Module %s not loaded... Close\n", device);
         return -1; // module not loaded
     }
     printf("Module %s loaded... \n", device);
@@ -100,7 +106,7 @@ int checkModule(char *device)
 char* prepareDataWrite(size_t size)
 {
     char* dataToWrite = (char *)malloc(size * sizeof(char) + 1);
-    memset(dataToWrite, 1, size);
+    memset(dataToWrite, 65, size);
     dataToWrite[size] = '\0';
     return dataToWrite;
 }
@@ -125,7 +131,7 @@ int writeToDev()
     res = write(fd, dataToWrite, strlen(dataToWrite), 0);
     if (res < 0)
     {
-        printf("Error in write!!!\n");
+        printLog("Error in write!!!\n");
     }
     return res;
 }
@@ -136,7 +142,7 @@ int readFromDev()
     res = read(fd, dataToRead, SIZE, 0);
     if (res < 0)
     {
-        printf("Error in read!!!\n");
+        printLog("Error in read!!!\n");
     }
     return res;
 }
@@ -153,8 +159,18 @@ double measureFuncDuration(int (*func_ptr)(void))
     time_taken = ((double)t) / CLOCKS_PER_SEC;
     if (e < 0)
     {
-        printf("Error in __FUNCTION__ = %s\n", __FUNCTION__);
+        printLog("Error in __FUNCTION__ = %s\n", __FUNCTION__);
         return e;
     }
     return time_taken;
+}
+
+void printLog(const char* format, ...)
+{
+    if(DEBUG){
+        va_list args;
+        va_start(args, format);
+        vprintf(format, args);
+        va_end(args);
+    }
 }
