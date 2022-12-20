@@ -17,7 +17,7 @@
 
 #define MY_MAJOR 42
 #define MY_MAX_MINORS 5
-#define BUFFER_SIZE 256*4096    // 1MB Dát
+#define BUFFER_SIZE 1024*4096    // 4MB Dát
 #define NAME "Simple_chardev"
 
 

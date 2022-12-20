@@ -17,7 +17,7 @@ clock_t start, end;
 double cpu_time_used;
 
 #define DEVICE "/dev/simple_chardev"
-#define SIZE 256*4096     // 1MB
+static size_t SIZE = 4096 ;    // 1MB
 int fd = 0;
 int offset = 0;
 char *dataToWrite;
@@ -28,7 +28,12 @@ void printErr(const char *format, ...);
 int checkModule();
 char *prepareDataWrite(size_t);
 char *prepareDataRead(size_t);
-void prepareData(size_t);
+int prepareData(size_t);
+
+char *changeDataWriteSize(char*, size_t);
+char *changeDataReadSize(char*, size_t);
+int changeDataSize(size_t);
+
 int writeToDev();
 int readFromDev();
 double measureFuncDuration(int (*func_ptr)(void));
@@ -37,6 +42,7 @@ int doMeasure();
 int main(int argc, char const *argv[])
 {
     int e;
+    int sizes[5] = {1,128,256,512,1024};
     if (e = checkModule(DEVICE) != 0)
     {
         return e;
@@ -46,12 +52,28 @@ int main(int argc, char const *argv[])
 
     if (fd == -1)
     {
-        printLog("Error in open file: %i\n", fd);
+        printErr("Error in open file: %i\n", fd);
         return fd;
     }
 
-    prepareData(SIZE);
-    doMeasure();    
+    if (prepareData(SIZE) != 0)
+    {
+        printErr("Error in open file: %i\n", fd);
+        return -1;
+    }        
+
+    for (int i = 0; i < 5; i++)
+    {
+        SIZE = sizes[i]*4096;
+        printf("\nMeasurment number: %i, with data size: %liB \n", i+1, SIZE);
+        if (changeDataSize(SIZE) != 0)
+        {
+            printErr("Error in open file: %i\n", fd);
+            return -1;
+        }
+        doMeasure();  
+    }
+   
 
     close(fd);
     free(dataToWrite);
@@ -142,10 +164,40 @@ char *prepareDataRead(size_t size)
     return dataToRead;
 }
 
-void prepareData(size_t size)
+int prepareData(size_t size)
 {
     dataToWrite = prepareDataWrite(size);
     dataToRead = prepareDataRead(size);
+
+    if (dataToWrite==NULL || dataToRead==NULL)
+        return -1;
+
+    return 0;
+}
+
+char *changeDataWriteSize(char* data, size_t size)
+{
+    char* dataToWrite = (char *)realloc(data, size * sizeof(char));
+    memset(dataToWrite, 66, size);
+    dataToWrite[size+1] = '\0';
+    return dataToWrite;
+}
+
+char *changeDataReadSize(char* data, size_t size)
+{
+    char* dataToRead = (char *)realloc(data, size * sizeof(char));
+    memset(dataToRead, 0, sizeof(dataToRead));
+    return dataToRead;
+}
+
+int changeDataSize(size_t size)
+{
+    dataToWrite = changeDataWriteSize(dataToWrite, size);
+    dataToRead = changeDataReadSize(dataToRead, size);
+    if (dataToWrite==NULL || dataToRead==NULL)
+        return -1;
+
+    return 0;
 }
 
 int writeToDev()
