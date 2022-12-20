@@ -129,7 +129,7 @@ int checkModule(char *device)
 
 char *prepareDataWrite(size_t size)
 {
-    char* dataToWrite = (char *)malloc(size * sizeof(char)+1);
+    char* dataToWrite = (char *)malloc(size * sizeof(char));
     memset(dataToWrite, 65, size);
     dataToWrite[size+1] = '\0';
     return dataToWrite;
@@ -152,7 +152,7 @@ int writeToDev()
 {
     size_t res;
     res = write(fd, dataToWrite, strlen(dataToWrite));
-    if (res < 0)
+    if (res <= 0)
     {
         printErr("Error in write!!!\n");
     }
@@ -163,7 +163,7 @@ int readFromDev()
 {
     size_t res;
     res = read(fd, dataToRead, SIZE);
-    if (res < 0)
+    if (res <= 0)
     {
         printErr("Error in read!!!\n");
     }
@@ -181,7 +181,7 @@ double measureFuncDuration(int (*func_ptr)(void))
     t = clock() - t;
     time_taken = ((double)t) / CLOCKS_PER_SEC;
     printLog("ret: %li\n", e);
-    if (e < 0)
+    if (e <= 0)
     {
         printErr("Error in __FUNCTION__ = %s\n", __FUNCTION__);
         return e;

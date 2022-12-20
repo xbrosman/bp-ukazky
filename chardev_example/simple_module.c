@@ -13,14 +13,15 @@
 #include <linux/semaphore.h>
 #include <linux/uaccess.h>
 #include <linux/fs.h>
+#include <linux/slab.h>
 
 #define MY_MAJOR 42
 #define MY_MAX_MINORS 5
-#define BUFFER_SIZE 4096*4096    // 4096* pagesize MB Dát
+#define BUFFER_SIZE 256*4096    // 1MB Dát
 #define NAME "Simple_chardev"
 
 
-static char device_buffer[BUFFER_SIZE] = {0};
+static char *device_buffer = NULL;
 struct semaphore sem;
 
 int open(struct inode *pinode, struct file *pfile)
@@ -37,34 +38,41 @@ int open(struct inode *pinode, struct file *pfile)
 ssize_t read(struct file *pfile, char __user *buffer, size_t length, loff_t *offset)
 {
     int bytes_read = 0;
-    printk(KERN_INFO "%s: %s\n",NAME, __FUNCTION__);
-   
-    bytes_read = copy_to_user(buffer, device_buffer, length); 
+    int bytes_to_read = 0;
+    if (length >= BUFFER_SIZE)
+    {
+        bytes_to_read = BUFFER_SIZE;   
+    }         
+    else
+    {
+        bytes_to_read = length;
+    }    
 
+    bytes_read = copy_to_user(buffer+*offset, device_buffer, bytes_to_read);
     if (bytes_read != 0)
     {
         printk(KERN_INFO "Error read: %s", __FUNCTION__);
         return -EFAULT; // vracia bad address
     }
-    return length; // vracia pocet prenesenych bytov
+    //printk(KERN_INFO "%s: %s, %iB, %iB\n",NAME, __FUNCTION__, bytes_to_read, bytes_to_read-bytes_read);
+    return bytes_to_read - bytes_read;
 }
 
 ssize_t write(struct file *pfile, const char *buffer, size_t length, loff_t *offset)
 {
-    printk(KERN_INFO "%s: %s\n", NAME, __FUNCTION__);
-    int b_max;
-    int bytes_to_write;
-    int bytes_writen;
-    b_max = BUFFER_SIZE - *offset;
-    if (b_max > length)
-        bytes_to_write = length;
+    int bytes_writen = 0;  
+    int bytes_to_write = 0;   
+    if (length >= BUFFER_SIZE)
+    {
+        bytes_to_write = BUFFER_SIZE;   
+    }         
     else
-        bytes_to_write = b_max;
-
-    bytes_writen = bytes_to_write - copy_from_user(device_buffer + *offset, buffer, bytes_to_write);
-    *offset += bytes_writen;
-    printk(KERN_INFO "%s: %iB, %iB\n", NAME, bytes_to_write, bytes_writen);
-    return bytes_writen;
+    {
+        bytes_to_write = length;
+    }   
+    bytes_writen = copy_from_user(device_buffer + *offset, buffer, bytes_to_write);
+    //printk(KERN_INFO "%s: %s, %iB, %iB\n", NAME, __FUNCTION__, bytes_to_write, bytes_to_write-bytes_writen);    
+    return bytes_to_write - bytes_writen;
 }
 
 int close(struct inode *pinode, struct file *pfile)
@@ -88,6 +96,12 @@ int simple_module_init(void)
     printk(KERN_INFO "%s: %s\n", NAME, __FUNCTION__);
     sema_init(&sem, 1);
     register_chrdev(MY_MAJOR, NAME, &my_file_operations);
+    device_buffer = (char *)kmalloc(BUFFER_SIZE, GFP_KERNEL);
+    if (device_buffer != NULL)
+        printk("malloc address: 0x%p\n", device_buffer);
+    else
+        printk("wrong malloc address: 0x%p\n", device_buffer);
+
     return 0;
 }
 
@@ -95,6 +109,8 @@ void simple_module_exit(void)
 {
     printk(KERN_INFO "%s: %s\n", NAME, __FUNCTION__);
     unregister_chrdev(MY_MAJOR, NAME);
+    if (device_buffer)
+        kfree(device_buffer);
 }
 
 module_init(simple_module_init);
