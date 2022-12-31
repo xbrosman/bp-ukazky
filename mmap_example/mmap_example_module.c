@@ -22,7 +22,7 @@
 
 #define MY_MAJOR 43
 #define MY_MAX_MINORS 5
-#define MAX_SIZE (PAGE_SIZE*2)
+#define MAX_SIZE 1024*4096    // 4MB Dát
 #define NAME "mmap_example_module"
 
 static DEFINE_MUTEX(mmap_mutex);
@@ -117,9 +117,9 @@ struct file_operations my_file_operations = {
 int mmap_module_init(void)
 {
     printk(KERN_INFO "%s: %s\n", NAME, __FUNCTION__);
-	device_buffer = kmalloc(MAX_SIZE, GFP_KERNEL);
-    char *text = "Message from kernel\0";
-    memcpy(device_buffer,text , strlen(text)*sizeof(char));
+	device_buffer = (char *)kmalloc(MAX_SIZE, GFP_KERNEL);
+    // char *text = "Message from kernel\0";
+    // memcpy(device_buffer,text , strlen(text)*sizeof(char));
 
     register_chrdev(MY_MAJOR, NAME, &my_file_operations);
 	mutex_init(&mmap_mutex);
