@@ -5,19 +5,28 @@
     bp_komunikacia/netlink_example/netlink_app.c
     Author: Filip Brosman
 */
-#include <stdlib.h>
 #include <stdio.h>
+#include <malloc.h>
 #include <string.h>
-#include <unistd.h>
-#include <errno.h>
+#include <fcntl.h>
 #include <time.h>
+#include <stdarg.h>
+#include <math.h>
+#include <unistd.h>
+
 #include <sys/socket.h>
+#include <errno.h>
 #include <linux/netlink.h>
+
+#define DEBUG 1
 
 #define MAX_PAYLOAD 4096 /* maximum payload size */
 #define NETLINK_PORT 17
 
-#define SIZE 4096
+clock_t start, end;
+double cpu_time_used;
+
+static size_t SIZE = 4096;    // 1MB
 char *dataToWrite;
 char *dataToRead;
 
@@ -29,29 +38,193 @@ struct iovec iov;
 int sock_fd;
 int rc;
 
-int networkSetup()
+void printLog(const char *format, ...);
+void printErr(const char *format, ...);
+
+char *prepareDataWrite(size_t);
+char *prepareDataRead(size_t);
+int prepareData(size_t);
+
+char *changeDataWriteSize(char*, size_t);
+char *changeDataReadSize(char*, size_t);
+int changeDataSize(size_t);
+
+int writeToDev();
+int readFromDev();
+double measureFuncDuration(int (*func_ptr)(void));
+int doMeasure();
+
+int networkSetup(size_t);
+
+int main(int argc, char **argv)
+{
+    int e = 0;
+    prepareData(SIZE);
+    if ((e = networkSetup(SIZE))==-1){
+        printErr("Chyba konfiguracie socketu!");
+        return -1;
+    }
+
+    doMeasure();
+
+    close(sock_fd);
+    free(dataToWrite);
+    free(dataToRead);
+    return 0;
+}
+
+int doMeasure()
+{
+    double time_taken = 0;
+   // warmUp(10);
+
+    int n = 0;
+    double sumWrite = 0;
+    double avgWrite = 0;
+
+    double sumRead = 0;
+    double avgRead = 0;
+
+    // for (n = 0; n < 100; n++)
+    // {
+        time_taken = measureFuncDuration(writeToDev);
+        sumWrite += time_taken;       
+   //     printLog("Data writen: %s\n", dataToWrite);
+        if (time_taken < 0)
+        {
+            printErr("Error during reading.");
+            return -1;
+        }
+        else
+        {
+            printLog("Time to write: %fus\n", time_taken * 1000000);
+        }
+    
+        time_taken = measureFuncDuration(readFromDev);
+        sumRead += time_taken;
+     //   printLog("Data read: %s\n", dataToRead);
+        if (time_taken < 0)
+        {
+            printErr("Error during reading.");
+            return -1;
+        }
+        else
+        {
+            printLog("Time to read: %fus\n", time_taken * 1000000);
+        }
+
+        // if (strcmp(dataToRead, dataToWrite) != 0)
+        // {
+        //     printErr("Data writen and read are not equal\n");
+        //     return -1;
+        // }
+    // }
+
+    // avgWrite = sumWrite / n;
+    // avgRead = sumRead / n;
+    // printf("avgWrite=%lfus\n", avgWrite*1000000);
+    // printf("avgRead=%lfus\n", avgRead*1000000);
+    return 0;
+}
+
+double measureFuncDuration(int (*func_ptr)(void))
+{
+    clock_t t;
+    double time_taken;
+    int e = 0;
+
+    t = clock();
+    e = func_ptr();
+    t = clock() - t;     
+    time_taken = ((double)t) / CLOCKS_PER_SEC;
+    // printf("Send to kernel: %s\n", dataToWrite);
+    // printf("Received from kernel: %s\n", NLMSG_DATA(nlh));
+    printLog("ret: %li\n", e);
+    if (e <= 0)
+    {
+        printErr("Error in __FUNCTION__ = %s\n", __FUNCTION__);
+        return e;
+    }
+    return time_taken;
+}
+
+int writeToDev()
+{
+    rc = sendmsg(sock_fd, &msg, 0);
+    if (rc < 0)
+    {
+        printErr("send: %s\n", strerror(errno));
+        close(sock_fd);
+        return 0;
+    }    
+    return rc;
+}
+
+int readFromDev()
+{
+    memset(nlh, 0, NLMSG_SPACE(MAX_PAYLOAD));
+
+    rc = recvmsg(sock_fd, &msg, 0);
+    if (rc < 0)
+    {
+        printErr("send: %s\n", strerror(errno));
+        close(sock_fd);
+        return 0;
+    }   
+    return rc;
+}
+
+char *prepareDataWrite(size_t size)
+{
+    char* dataToWrite = (char *)malloc(size * sizeof(char));
+    memset(dataToWrite, 65, size);
+    dataToWrite[size+1] = '\0';
+    return dataToWrite;
+}
+
+char *prepareDataRead(size_t size)
+{
+    char* dataToRead = (char *)malloc(size * sizeof(char));
+    memset(dataToRead, 0, sizeof(dataToRead));
+    return dataToRead;
+}
+
+int prepareData(size_t size)
+{
+    dataToWrite = prepareDataWrite(size);
+    dataToRead = prepareDataRead(size);
+
+    if (dataToWrite==NULL || dataToRead==NULL)
+        return -1;
+
+    return 0;
+}
+
+int networkSetup(size_t size)
 {
     sock_fd = socket(PF_NETLINK, SOCK_RAW, NETLINK_PORT);
     if (sock_fd < 0)
     {
         printf("socket: %s\n", strerror(errno));
-        return 1;
+        return -1;
     }
 
-    memset(&src_addr, 0, sizeof(src_addr));
-    src_addr.nl_family = AF_NETLINK;
-    src_addr.nl_pid = getpid();
-    src_addr.nl_groups = 0;
-    bind(sock_fd, (struct sockaddr *)&src_addr, sizeof(src_addr));
+    // konfikuracia zdrojovej adresy
+    memset(&src_addr, 0, sizeof(src_addr)); // nulovanie pamäte
+    src_addr.nl_family = AF_NETLINK;    // nastavenie AF_NETTLINK socketu
+    src_addr.nl_pid = getpid();         // pid procesu
+    src_addr.nl_groups = 0;             // nastavenie skupiny
+    bind(sock_fd, (struct sockaddr *)&src_addr, sizeof(src_addr));  // zapisanie nastaveni do suboroveho deskriptora
 
+    // konfikuracia cielovej adresy, ciel je jadro
     memset(&dest_addr, 0, sizeof(dest_addr));
     dest_addr.nl_family = AF_NETLINK;
     dest_addr.nl_pid = 0;
     dest_addr.nl_groups = 0; 
 
-    nlh = (struct nlmsghdr *)malloc(NLMSG_SPACE(MAX_PAYLOAD));
-
-    nlh->nlmsg_len = NLMSG_SPACE(MAX_PAYLOAD);
+    // konfiguracia hlavicky sprav
+    nlh = (struct nlmsghdr *)malloc(NLMSG_SPACE(size));
+    nlh->nlmsg_len = NLMSG_SPACE(size);
     nlh->nlmsg_pid = getpid();
     nlh->nlmsg_flags = 0;
 
@@ -69,91 +242,21 @@ int networkSetup()
     return 0;
 }
 
-void prepareData()
+void printLog(const char *format, ...)
 {
-    dataToWrite = (char *)malloc(SIZE * sizeof(char));
-    int i;
-    for (i = 0; i < SIZE; i++)
+    if (DEBUG)
     {
-        dataToWrite[i] = 'A' + (char)(i % 26);
+        va_list args;
+        va_start(args, format);
+        vprintf(format, args);
+        va_end(args);
     }
-    dataToWrite[SIZE] = '\0';
-    dataToRead = (char *)malloc(SIZE * sizeof(char));
-    memset(dataToRead, 0, sizeof(dataToRead));  
-    // printf("\n %s %s\n", dataToRead, dataToWrite);
 }
 
-int writeToDev()
+void printErr(const char *format, ...)
 {
-    rc = sendmsg(sock_fd, &msg, 0);
-    if (rc < 0)
-    {
-        printf("send: %s\n", strerror(errno));
-        close(sock_fd);
-        return 1;
-    }
-    //printf("Send to kernel: %s\n", dataToWrite);
-    return 0;
-}
-
-int readFromDev()
-{
-    memset(nlh, 0, NLMSG_SPACE(MAX_PAYLOAD));
-
-    rc = recvmsg(sock_fd, &msg, 0);
-    if (rc < 0)
-    {
-        printf("send: %s\n", strerror(errno));
-        close(sock_fd);
-        return 1;
-    }
-   // printf("Received from kernel: %s\n", NLMSG_DATA(nlh));
-   return 0;
-}
-
-int main(int argc, char **argv)
-{
-    clock_t t;
-    double time_taken;
-    int e = 0;
-    prepareData();
-    if (e = networkSetup())
-        goto freeall;
-
-    t = clock();
-    e = writeToDev();
-    t = clock() - t;
-    time_taken = ((double)t) / CLOCKS_PER_SEC;
-    if (e)
-    {
-        printf("Error during writing.");
-        goto freeall;
-    }
-    else
-    {
-        printf("Time to write: %fus\n", time_taken * 1000000);       
-    }
-
-    t = clock();
-    e = readFromDev();
-    t = clock() - t;
-    time_taken = ((double)t) / CLOCKS_PER_SEC;
-    if (e)
-    {   
-       printf("Error during reading.");
-       goto freeall;
-    }
-    else
-    {
-        printf("Time to read: %fus\n", time_taken * 1000000);
-    }
-    close(sock_fd);
-    free(dataToWrite);
-    free(dataToRead);
-    return 0;
-freeall:
-    close(sock_fd);
-    free(dataToWrite);
-    free(dataToRead);
-    return e;
+    va_list args;
+    va_start(args, format);
+    vprintf(format, args);
+    va_end(args);    
 }
