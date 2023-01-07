@@ -78,7 +78,7 @@ int doMeasure()
     double time_taken = 0;
    // warmUp(10);
 
-    int n = 0;
+    // int n = 0;
     double sumWrite = 0;
     double avgWrite = 0;
 
@@ -185,7 +185,7 @@ char *prepareDataWrite(size_t size)
 char *prepareDataRead(size_t size)
 {
     char* dataToRead = (char *)malloc(size * sizeof(char));
-    memset(dataToRead, 0, sizeof(dataToRead));
+    memset(dataToRead, 0, size);
     return dataToRead;
 }
 
