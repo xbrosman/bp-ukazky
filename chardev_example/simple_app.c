@@ -102,11 +102,8 @@ int doMeasure()
         {
             printLog("Error during reading.");
             return -1;
-        }
-        else
-        {
-            printLog("Time to write: %fus\n", time_taken * 1000000);
-        }
+        }        
+        printLog("Time to write: %fus\n", time_taken * 1000000);        
     }
 
     for (n = 0; n < 100; n++)
@@ -119,10 +116,8 @@ int doMeasure()
             printLog("Error during reading.");
             return -1;
         }
-        else
-        {
-            printLog("Time to read: %fus\n", time_taken * 1000000);
-        }
+               
+        printLog("Time to read: %fus\n", time_taken * 1000000);        
 
         if (strcmp(dataToRead, dataToWrite) != 0)
         {

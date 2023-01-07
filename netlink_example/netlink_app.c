@@ -5,6 +5,7 @@
     bp_komunikacia/netlink_example/netlink_app.c
     Author: Filip Brosman
 */
+#include <stdlib.h>
 #include <stdio.h>
 #include <malloc.h>
 #include <string.h>
@@ -13,9 +14,9 @@
 #include <stdarg.h>
 #include <math.h>
 #include <unistd.h>
+#include <errno.h>
 
 #include <sys/socket.h>
-#include <errno.h>
 #include <linux/netlink.h>
 
 #define DEBUG 1
@@ -26,7 +27,7 @@
 clock_t start, end;
 double cpu_time_used;
 
-static size_t SIZE = 4096;    // 1MB
+static size_t SIZE = 4096; // 1MB
 char *dataToWrite;
 char *dataToRead;
 
@@ -45,8 +46,8 @@ char *prepareDataWrite(size_t);
 char *prepareDataRead(size_t);
 int prepareData(size_t);
 
-char *changeDataWriteSize(char*, size_t);
-char *changeDataReadSize(char*, size_t);
+char *changeDataWriteSize(char *, size_t);
+char *changeDataReadSize(char *, size_t);
 int changeDataSize(size_t);
 
 int writeToDev();
@@ -58,9 +59,9 @@ int networkSetup(size_t);
 
 int main(int argc, char **argv)
 {
-    int e = 0;
     prepareData(SIZE);
-    if ((e = networkSetup(SIZE))==-1){
+    if (networkSetup(SIZE) == -1)
+    {
         printErr("Chyba konfiguracie socketu!");
         return -1;
     }
@@ -76,7 +77,7 @@ int main(int argc, char **argv)
 int doMeasure()
 {
     double time_taken = 0;
-   // warmUp(10);
+    // warmUp(10);
 
     // int n = 0;
     double sumWrite = 0;
@@ -87,37 +88,32 @@ int doMeasure()
 
     // for (n = 0; n < 100; n++)
     // {
-        time_taken = measureFuncDuration(writeToDev);
-        sumWrite += time_taken;       
-   //     printLog("Data writen: %s\n", dataToWrite);
-        if (time_taken < 0)
-        {
-            printErr("Error during reading.");
-            return -1;
-        }
-        else
-        {
-            printLog("Time to write: %fus\n", time_taken * 1000000);
-        }
-    
-        time_taken = measureFuncDuration(readFromDev);
-        sumRead += time_taken;
-     //   printLog("Data read: %s\n", dataToRead);
-        if (time_taken < 0)
-        {
-            printErr("Error during reading.");
-            return -1;
-        }
-        else
-        {
-            printLog("Time to read: %fus\n", time_taken * 1000000);
-        }
+    time_taken = measureFuncDuration(writeToDev);
+    sumWrite += time_taken;
+    //     printLog("Data writen: %s\n", dataToWrite);
+    if (time_taken < 0)
+    {
+        printErr("Error during reading.");
+        return -1;
+    }
 
-        // if (strcmp(dataToRead, dataToWrite) != 0)
-        // {
-        //     printErr("Data writen and read are not equal\n");
-        //     return -1;
-        // }
+    printLog("Time to write: %fus\n", time_taken * 1000000);
+
+    time_taken = measureFuncDuration(readFromDev);
+    sumRead += time_taken;
+    //   printLog("Data read: %s\n", dataToRead);
+    if (time_taken < 0)
+    {
+        printErr("Error during reading.");
+        return -1;
+    }
+    printLog("Time to read: %fus\n", time_taken * 1000000);
+
+    // if (strcmp(dataToRead, dataToWrite) != 0)
+    // {
+    //     printErr("Data writen and read are not equal\n");
+    //     return -1;
+    // }
     // }
 
     // avgWrite = sumWrite / n;
@@ -135,7 +131,7 @@ double measureFuncDuration(int (*func_ptr)(void))
 
     t = clock();
     e = func_ptr();
-    t = clock() - t;     
+    t = clock() - t;
     time_taken = ((double)t) / CLOCKS_PER_SEC;
     // printf("Send to kernel: %s\n", dataToWrite);
     // printf("Received from kernel: %s\n", NLMSG_DATA(nlh));
@@ -150,84 +146,13 @@ double measureFuncDuration(int (*func_ptr)(void))
 
 int writeToDev()
 {
-    rc = sendmsg(sock_fd, &msg, 0);
-    if (rc < 0)
-    {
-        printErr("send: %s\n", strerror(errno));
-        close(sock_fd);
-        return 0;
-    }    
-    return rc;
-}
-
-int readFromDev()
-{
-    memset(nlh, 0, NLMSG_SPACE(MAX_PAYLOAD));
-
-    rc = recvmsg(sock_fd, &msg, 0);
-    if (rc < 0)
-    {
-        printErr("send: %s\n", strerror(errno));
-        close(sock_fd);
-        return 0;
-    }   
-    return rc;
-}
-
-char *prepareDataWrite(size_t size)
-{
-    char* dataToWrite = (char *)malloc(size * sizeof(char));
-    memset(dataToWrite, 65, size);
-    dataToWrite[size+1] = '\0';
-    return dataToWrite;
-}
-
-char *prepareDataRead(size_t size)
-{
-    char* dataToRead = (char *)malloc(size * sizeof(char));
-    memset(dataToRead, 0, size);
-    return dataToRead;
-}
-
-int prepareData(size_t size)
-{
-    dataToWrite = prepareDataWrite(size);
-    dataToRead = prepareDataRead(size);
-
-    if (dataToWrite==NULL || dataToRead==NULL)
-        return -1;
-
-    return 0;
-}
-
-int networkSetup(size_t size)
-{
-    sock_fd = socket(PF_NETLINK, SOCK_RAW, NETLINK_PORT);
-    if (sock_fd < 0)
-    {
-        printf("socket: %s\n", strerror(errno));
-        return -1;
-    }
-
-    // konfikuracia zdrojovej adresy
-    memset(&src_addr, 0, sizeof(src_addr)); // nulovanie pamäte
-    src_addr.nl_family = AF_NETLINK;    // nastavenie AF_NETTLINK socketu
-    src_addr.nl_pid = getpid();         // pid procesu
-    src_addr.nl_groups = 0;             // nastavenie skupiny
-    bind(sock_fd, (struct sockaddr *)&src_addr, sizeof(src_addr));  // zapisanie nastaveni do suboroveho deskriptora
-
-    // konfikuracia cielovej adresy, ciel je jadro
-    memset(&dest_addr, 0, sizeof(dest_addr));
-    dest_addr.nl_family = AF_NETLINK;
-    dest_addr.nl_pid = 0;
-    dest_addr.nl_groups = 0; 
-
     // konfiguracia hlavicky sprav
-    nlh = (struct nlmsghdr *)malloc(NLMSG_SPACE(size));
-    nlh->nlmsg_len = NLMSG_SPACE(size);
+    nlh = (struct nlmsghdr *)malloc(NLMSG_SPACE(SIZE));
+    nlh->nlmsg_len = NLMSG_SPACE(SIZE);
     nlh->nlmsg_pid = getpid();
     nlh->nlmsg_flags = 0;
 
+    // naplnenie hlavicky obsahom
     strcpy(NLMSG_DATA(nlh), dataToWrite);
 
     memset(&iov, 0, sizeof(iov));
@@ -239,6 +164,80 @@ int networkSetup(size_t size)
     msg.msg_namelen = sizeof(dest_addr);
     msg.msg_iov = &iov;
     msg.msg_iovlen = 1;
+    // odoslanie do jadra
+    rc = sendmsg(sock_fd, &msg, 0);
+    if (rc < 0)
+    {
+        printErr("send: %s\n", strerror(errno));
+        close(sock_fd);
+        return 0;
+    }
+    return rc;
+}
+
+int readFromDev()
+{
+    memset(nlh, 0, NLMSG_SPACE(MAX_PAYLOAD));
+    rc = recvmsg(sock_fd, &msg, 0);
+    // kopirovanie dat z jadra kde bol ulozeny vunkiou recvmsg()
+    strcpy(dataToRead, NLMSG_DATA(nlh));
+    if (rc < 0)
+    {
+        printErr("send: %s\n", strerror(errno));
+        close(sock_fd);
+        return 0;
+    }
+    return rc;
+}
+
+char *prepareDataWrite(size_t size)
+{
+    char *dataToWrite = (char *)malloc(size * sizeof(char));
+    memset(dataToWrite, 65, size);
+    dataToWrite[size + 1] = '\0';
+    return dataToWrite;
+}
+
+char *prepareDataRead(size_t size)
+{
+    char *dataToRead = (char *)malloc(size * sizeof(char));
+    memset(dataToRead, 0, size);
+    return dataToRead;
+}
+
+int prepareData(size_t size)
+{
+    dataToWrite = prepareDataWrite(size);
+    dataToRead = prepareDataRead(size);
+
+    if (dataToWrite == NULL || dataToRead == NULL)
+        return -1;
+
+    return 0;
+}
+
+int networkSetup(size_t size)
+{
+    // vytvorenie
+    sock_fd = socket(PF_NETLINK, SOCK_RAW, NETLINK_PORT);
+    if (sock_fd < 0)
+    {
+        printf("socket: %s\n", strerror(errno));
+        return -1;
+    }
+
+    // konfikuracia zdrojovej adresy
+    memset(&src_addr, 0, sizeof(src_addr));                        // nulovanie pamäte
+    src_addr.nl_family = AF_NETLINK;                               // nastavenie AF_NETTLINK socketu
+    src_addr.nl_pid = getpid();                                    // pid procesu
+    src_addr.nl_groups = 0;                                        // nastavenie skupiny
+    bind(sock_fd, (struct sockaddr *)&src_addr, sizeof(src_addr)); // zapisanie nastaveni do suboroveho deskriptora
+
+    // konfikuracia cielovej adresy, ciel je jadro
+    memset(&dest_addr, 0, sizeof(dest_addr));
+    dest_addr.nl_family = AF_NETLINK;
+    dest_addr.nl_pid = 0;
+    dest_addr.nl_groups = 0;
     return 0;
 }
 
@@ -258,5 +257,5 @@ void printErr(const char *format, ...)
     va_list args;
     va_start(args, format);
     vprintf(format, args);
-    va_end(args);    
+    va_end(args);
 }
