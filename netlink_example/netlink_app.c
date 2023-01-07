@@ -178,7 +178,7 @@ int readFromDev()
 {
     memset(nlh, 0, NLMSG_SPACE(MAX_PAYLOAD));
     rc = recvmsg(sock_fd, &msg, 0);
-    // kopirovanie dat z jadra kde bol ulozeny vunkiou recvmsg()
+    // kopirovanie dat z jadra kde bol ulozeny funkiou recvmsg()
     strcpy(dataToRead, NLMSG_DATA(nlh));
     if (rc < 0)
     {
