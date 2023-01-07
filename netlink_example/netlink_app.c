@@ -77,49 +77,48 @@ int main(int argc, char **argv)
 int doMeasure()
 {
     double time_taken = 0;
-    // warmUp(10);
 
-    // int n = 0;
     double sumWrite = 0;
     double avgWrite = 0;
 
     double sumRead = 0;
     double avgRead = 0;
 
-    // for (n = 0; n < 100; n++)
-    // {
-    time_taken = measureFuncDuration(writeToDev);
-    sumWrite += time_taken;
-    //     printLog("Data writen: %s\n", dataToWrite);
-    if (time_taken < 0)
+    int n = 0;
+    for (n = 0; n < 100; n++)
     {
-        printErr("Error during reading.");
-        return -1;
+        time_taken = measureFuncDuration(writeToDev);
+        sumWrite += time_taken;
+        //     printLog("Data writen: %s\n", dataToWrite);
+        if (time_taken < 0)
+        {
+            printErr("Error during reading.");
+            return -1;
+        }
+
+        printLog("Time to write: %fus\n", time_taken * 1000000);
+
+        time_taken = measureFuncDuration(readFromDev);
+        sumRead += time_taken;
+        //   printLog("Data read: %s\n", dataToRead);
+        if (time_taken < 0)
+        {
+            printErr("Error during reading.");
+            return -1;
+        }
+        printLog("Time to read: %fus\n", time_taken * 1000000);
+
+        if (strcmp(dataToRead, dataToWrite) != 0)
+        {
+            printErr("Data writen and read are not equal\n");
+            return -1;
+        }
     }
 
-    printLog("Time to write: %fus\n", time_taken * 1000000);
-
-    time_taken = measureFuncDuration(readFromDev);
-    sumRead += time_taken;
-    //   printLog("Data read: %s\n", dataToRead);
-    if (time_taken < 0)
-    {
-        printErr("Error during reading.");
-        return -1;
-    }
-    printLog("Time to read: %fus\n", time_taken * 1000000);
-
-    // if (strcmp(dataToRead, dataToWrite) != 0)
-    // {
-    //     printErr("Data writen and read are not equal\n");
-    //     return -1;
-    // }
-    // }
-
-    // avgWrite = sumWrite / n;
-    // avgRead = sumRead / n;
-    // printf("avgWrite=%lfus\n", avgWrite*1000000);
-    // printf("avgRead=%lfus\n", avgRead*1000000);
+    avgWrite = sumWrite / n;
+    avgRead = sumRead / n;
+    printf("avgWrite=%lfus\n", avgWrite * 1000000);
+    printf("avgRead=%lfus\n", avgRead * 1000000);
     return 0;
 }
 

@@ -32,7 +32,7 @@ static void nl_rec_msg(struct sk_buff *skb)
 
     nlh = (struct nlmsghdr *)skb->data;
     pid = nlh->nlmsg_pid;
-    msg = (char *)nlmsg_data(nlh);
+    msg = (char *)nlmsg_data(nlh);  // hlavicka spravy 
     msg_size = strlen(msg);
 
     printk(KERN_INFO "%s: Received from pid %i\n", NAME, pid);
@@ -51,6 +51,7 @@ static void nl_rec_msg(struct sk_buff *skb)
 
     // printk(KERN_INFO "%s: Send %s\n", NAME, msg);
 
+    // odoslanie spravy 
     res = nlmsg_unicast(nl_sock, skb_out, pid);
     if (res < 0)
         printk(KERN_INFO "%s: Error while sending skb to user\n", NAME);
