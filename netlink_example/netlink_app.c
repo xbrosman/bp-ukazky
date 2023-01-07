@@ -19,7 +19,7 @@
 #include <sys/socket.h>
 #include <linux/netlink.h>
 
-#define DEBUG 1
+#define DEBUG 0
 
 #define MAX_PAYLOAD 4096 /* maximum payload size */
 #define NETLINK_PORT 17
@@ -55,18 +55,30 @@ int readFromDev();
 double measureFuncDuration(int (*func_ptr)(void));
 int doMeasure();
 
-int networkSetup(size_t);
+int networkSetup();
 
 int main(int argc, char **argv)
 {
+    int sizes[5] = {4096,8192,12288,16384, 131072};
     prepareData(SIZE);
-    if (networkSetup(SIZE) == -1)
+    if (networkSetup() == -1)
     {
         printErr("Chyba konfiguracie socketu!");
         return -1;
     }
 
-    doMeasure();
+    for (int i = 0; i < 5; i++)
+    {
+        SIZE = sizes[i];
+        printf("\nMeasurment number: %i, with data size: %liB \n", i+1, SIZE);
+        if (changeDataSize(SIZE) != 0)
+        {
+            printErr("Error in open file: %i\n", sock_fd);
+            return -1;
+        }
+        doMeasure();  
+    }
+
 
     close(sock_fd);
     free(dataToWrite);
@@ -215,10 +227,10 @@ int prepareData(size_t size)
     return 0;
 }
 
-int networkSetup(size_t size)
+int networkSetup()
 {
-    // vytvorenie
-    sock_fd = socket(PF_NETLINK, SOCK_RAW, NETLINK_PORT);
+    // vytvorenie socketu
+    sock_fd = socket(AF_NETLINK, SOCK_RAW, NETLINK_PORT);
     if (sock_fd < 0)
     {
         printf("socket: %s\n", strerror(errno));
@@ -237,6 +249,31 @@ int networkSetup(size_t size)
     dest_addr.nl_family = AF_NETLINK;
     dest_addr.nl_pid = 0;
     dest_addr.nl_groups = 0;
+    return 0;
+}
+
+char *changeDataWriteSize(char* data, size_t size)
+{
+    char* dataToWrite = (char *)realloc(data, size * sizeof(char));
+    memset(dataToWrite, 66, size);
+    dataToWrite[size+1] = '\0';
+    return dataToWrite;
+}
+
+char *changeDataReadSize(char* data, size_t size)
+{
+    char* dataToRead = (char *)realloc(data, size * sizeof(char));
+    memset(dataToRead, 0, size);
+    return dataToRead;
+}
+
+int changeDataSize(size_t size)
+{
+    dataToWrite = changeDataWriteSize(dataToWrite, size);
+    dataToRead = changeDataReadSize(dataToRead, size);
+    if (dataToWrite==NULL || dataToRead==NULL)
+        return -1;
+
     return 0;
 }
 
