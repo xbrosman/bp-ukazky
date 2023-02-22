@@ -29,7 +29,7 @@ int open(struct inode *pinode, struct file *pfile)
     printk(KERN_INFO "%s: %s\n", NAME, __FUNCTION__);
     if (down_interruptible(&sem) != 0)
     {
-        printk(KERN_ALERT "%s: Device is already opened in other device. Can not open.\n", NAME);
+        printk(KERN_ALERT "%s: Device is already opened. Can not be opened.\n", NAME);
         return -1;
     }
     return 0;
