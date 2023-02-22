@@ -109,8 +109,11 @@ int doMeasure()
         }
 
         printLog("Time to write: %fus\n", time_taken * 1000000);
-
+        printf("W: %f,", time_taken * 1000000);
+        
         time_taken = measureFuncDuration(readFromDev);
+        printf("R: %f,", time_taken * 1000000);
+        printf("\n");
         sumRead += time_taken;
         //   printLog("Data read: %s\n", dataToRead);
         if (time_taken < 0)

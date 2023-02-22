@@ -84,7 +84,6 @@ int main(int argc, char const *argv[])
 int doMeasure()
 {
     double time_taken = 0;
-   // warmUp(10);
 
     int n;
     double sumWrite = 0;
@@ -93,7 +92,7 @@ int doMeasure()
     double sumRead = 0;
     double avgRead = 0;
 
-    for (n = 0; n < 100; n++)
+    for (n = 0; n < 1000; n++)
     {
         time_taken = measureFuncDuration(writeToDev);
         sumWrite += time_taken;
@@ -103,10 +102,13 @@ int doMeasure()
             printLog("Error during reading.");
             return -1;
         }        
-        printLog("Time to write: %fus\n", time_taken * 1000000);        
+        printLog("Time to write: %fus\n", time_taken * 1000000);    
+        printf("%f,", time_taken * 1000000);
     }
 
-    for (n = 0; n < 100; n++)
+    printf("\n");
+
+    for (n = 0; n < 1000; n++)
     {
         time_taken = measureFuncDuration(readFromDev);
         sumRead += time_taken;
@@ -118,6 +120,7 @@ int doMeasure()
         }
                
         printLog("Time to read: %fus\n", time_taken * 1000000);        
+        printf("%f,", time_taken * 1000000);
 
         if (strcmp(dataToRead, dataToWrite) != 0)
         {
@@ -125,7 +128,7 @@ int doMeasure()
             return -1;
         }
     }
-
+    printf("\n");
     avgWrite = sumWrite / n;
     avgRead = sumRead / n;
     printf("avgWrite=%lfus\n", avgWrite * 1000000);
@@ -226,8 +229,7 @@ double measureFuncDuration(int (*func_ptr)(void))
     t = clock();
     e = func_ptr();
     t = clock() - t;
-    time_taken = ((double)t) / CLOCKS_PER_SEC;
-    printLog("ret: %li\n", e);
+    time_taken = ((double)t) / CLOCKS_PER_SEC;    
     if (e <= 0)
     {
         printErr("Error in __FUNCTION__ = %s\n", __FUNCTION__);

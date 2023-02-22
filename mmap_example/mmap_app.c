@@ -93,11 +93,12 @@ int doMeasure()
     double sumRead = 0;
     double avgRead = 0;
 
-    for (n = 0; n < 100; n++)
+    for (n = 0; n < 1000; n++)
     {
         time_taken = measureFuncDuration(writeToDev);
         sumWrite += time_taken;
    //     printLog("Data writen: %s\n", dataToWrite);
+        printf("%f,", time_taken * 1000000);
         if (time_taken < 0)
         {
             printLog("Error during reading.");
@@ -108,10 +109,11 @@ int doMeasure()
             printLog("Time to write: %fus\n", time_taken * 1000000);
         }
     }
-
-    for (n = 0; n < 100; n++)
+    printf("\n");
+    for (n = 0; n < 1000; n++)
     {
         time_taken = measureFuncDuration(readFromDev);
+        printf("%f,", time_taken * 1000000);
         sumRead += time_taken;
      //   printLog("Data read: %s\n", dataToRead);
         if (time_taken < 0)
@@ -130,7 +132,7 @@ int doMeasure()
             return -1;
         }
     }
-
+    printf("\n");
     avgWrite = sumWrite / n;
     avgRead = sumRead / n;
     printf("avgWrite=%lfus\n", avgWrite * 1000000);
