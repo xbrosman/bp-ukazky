@@ -91,7 +91,7 @@ struct file_operations my_file_operations = {
     .release = close,
 };
 
-int simple_module_init(void)
+int uring_module_init(void)
 {
     printk(KERN_INFO "%s: %s\n", NAME, __FUNCTION__);
     sema_init(&sem, 1);
@@ -105,7 +105,7 @@ int simple_module_init(void)
     return 0;
 }
 
-void simple_module_exit(void)
+void uring_module_exit(void)
 {
     printk(KERN_INFO "%s: %s\n", NAME, __FUNCTION__);
     unregister_chrdev(MY_MAJOR, NAME);
@@ -113,6 +113,6 @@ void simple_module_exit(void)
         kfree(device_buffer);
 }
 
-module_init(simple_module_init);
-module_exit(simple_module_exit);
+module_init(uring_module_init);
+module_exit(uring_module_exit);
 MODULE_LICENSE("GPL");
