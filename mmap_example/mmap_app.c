@@ -14,14 +14,18 @@
 
 #define DEBUG 0
 
+// MMAP config
+#define DEVICE "/dev/mmap_example_module"
+#define P_SIZE 4096
+int fd = 0;
+int offset = 0;
+
+// Test application's functions, structures
 clock_t start, end;
 double cpu_time_used;
 
-#define DEVICE "/dev/mmap_example_module"
-#define P_SIZE 4096
 static size_t SIZE = 4096 ;    // 1MB
-int fd = 0;
-int offset = 0;
+
 char *dataToWrite;
 char *dataToRead;
 char *p = NULL;

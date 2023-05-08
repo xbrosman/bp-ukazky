@@ -21,15 +21,9 @@
 
 #define DEBUG 0
 
+// Netlink config
 #define MAX_PAYLOAD 4096 /* maximum payload size */
 #define NETLINK_PORT 17
-
-clock_t start, end;
-double cpu_time_used;
-
-static size_t SIZE = 4096; // 1MB
-char *dataToWrite;
-char *dataToRead;
 
 struct sockaddr_nl src_addr;
 struct sockaddr_nl dest_addr;
@@ -38,6 +32,14 @@ struct msghdr msg;
 struct iovec iov;
 int sock_fd;
 int rc;
+
+// Test application's functions, structures
+clock_t start, end;
+double cpu_time_used;
+
+static size_t SIZE = 4096; // 1MB
+char *dataToWrite;
+char *dataToRead;
 
 void printLog(const char *format, ...);
 void printErr(const char *format, ...);
