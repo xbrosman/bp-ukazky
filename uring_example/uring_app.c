@@ -10,16 +10,26 @@
 #include <stdarg.h>
 #include <math.h>
 #include <unistd.h>
+#include <liburing.h>
 
-#define DEBUG 0
 
+#define DEBUG 1
+// IO_uring config
+#define QUEUE_DEPTH 1
+struct io_uring_params params;
+struct io_uring_sqe *sqe;
+struct io_uring_cqe *cqe;
+struct io_uring ring;
+struct iovec iov;
+
+#define INFILE "./inFile.txt"
+int fd_in, fd_out;
+
+// Test application's functions, structures
+static size_t SIZE = 4096 ;    // 1MB
 clock_t start, end;
 double cpu_time_used;
 
-#define DEVICE "/dev/simple_chardev"
-static size_t SIZE = 4096 ;    // 1MB
-int fd = 0;
-int offset = 0;
 char *dataToWrite;
 char *dataToRead;
 
@@ -44,41 +54,43 @@ int main(int argc, char const *argv[])
 {
     int e;
     int sizes[5] = {1,128,256,512,1024};
-    if (e = checkModule(DEVICE) != 0)
-    {
-        return e;
-    }
 
-    fd = open(DEVICE, O_RDWR);
-
-    if (fd == -1)
+    // File preparation
+    fd_in = open(INFILE, O_RDWR , 0644);
+    if (fd_in == -1)
     {
-        printErr("Error in open file: %i\n", fd);
-        return fd;
-    }
-
-    if (prepareData(SIZE) != 0)
-    {
-        printErr("Error in open file: %i\n", fd);
-        return -1;
-    }        
-
-    for (int i = 0; i < 5; i++)
-    {
-        SIZE = sizes[i]*4096;
-        printf("\nMeasurment number: %i, with data size: %liB \n", i+1, SIZE);
-        if (changeDataSize(SIZE) != 0)
-        {
-            printErr("Error in open file: %i\n", fd);
-            return -1;
-        }
-        doMeasure();  
+        printErr("Error in open input file: %i\n", fd_in);
+        return fd_in;
     }
    
 
-    close(fd);
+
+    io_uring_queue_init(QUEUE_DEPTH, &ring, 0);
+
+    
+    // if (e = prepareData(SIZE) != 0)
+    // {
+    //     printErr("Error prepare data: %i\n", e);
+    //     return -1;
+    // }        
+    
+    // for (int i = 0; i < 5; i++)
+    // {
+    //     SIZE = sizes[i]*4096;
+    //     printf("\nMeasurment number: %i, with data size: %liB \n", i+1, SIZE);
+    //     if (e = changeDataSize(SIZE) != 0)
+    //     {
+    //         printErr("Error change data size: %i\n", e);
+    //         return -1;
+    //     }
+    //     //doMeasure();  
+    // }
+   
+
     free(dataToWrite);
     free(dataToRead);
+    close(fd_in);
+    close(fd_out);
     return 0;
 }
 
@@ -210,7 +222,7 @@ int changeDataSize(size_t size)
 int writeToDev()
 {
     size_t res;
-    res = write(fd, dataToWrite, strlen(dataToWrite));
+   
     if (res <= 0)
     {
         printErr("Error in write!!!\n");
@@ -222,7 +234,7 @@ int writeToDev()
 int readFromDev()
 {
     size_t res;
-    res = read(fd, dataToRead, SIZE);
+    
     if (res <= 0)
     {
         printErr("Error in read!!!\n");
