@@ -50,6 +50,8 @@ char *changeDataWriteSize(char *, size_t);
 char *changeDataReadSize(char *, size_t);
 int changeDataSize(size_t);
 
+void setupHeader();
+
 int writeToDev();
 int readFromDev();
 double measureFuncDuration(int (*func_ptr)(void));
@@ -97,8 +99,9 @@ int doMeasure()
     double avgRead = 0;
 
     int n = 0;
-    for (n = 0; n < 100; n++)
+    for (n = 0; n < 1000; n++)
     {
+        setupHeader();
         time_taken = measureFuncDuration(writeToDev);
         sumWrite += time_taken;
         //     printLog("Data writen: %s\n", dataToWrite);
@@ -109,10 +112,11 @@ int doMeasure()
         }
 
         printLog("Time to write: %fus\n", time_taken * 1000000);
-        printf("W: %f,", time_taken * 1000000);
+        printf("%f,", time_taken * 1000000);
         
+        memset(dataToRead, 0, SIZE);
         time_taken = measureFuncDuration(readFromDev);
-        printf("R: %f,", time_taken * 1000000);
+        printf("%f,", time_taken * 1000000);
         printf("\n");
         sumRead += time_taken;
         //   printLog("Data read: %s\n", dataToRead);
@@ -123,6 +127,7 @@ int doMeasure()
         }
         printLog("Time to read: %fus\n", time_taken * 1000000);
 
+        // Kontrola prenosu 
         if (strcmp(dataToRead, dataToWrite) != 0)
         {
             printErr("Data writen and read are not equal\n");
@@ -147,8 +152,10 @@ double measureFuncDuration(int (*func_ptr)(void))
     e = func_ptr();
     t = clock() - t;
     time_taken = ((double)t) / CLOCKS_PER_SEC;
-    // printf("Send to kernel: %s\n", dataToWrite);
-    // printf("Received from kernel: %s\n", NLMSG_DATA(nlh));
+
+    // Kontrola dat pri debugovani
+    printLog("Send to kernel: %s\n", dataToWrite);
+    printLog("Received from kernel: %s\n", NLMSG_DATA(nlh));
     printLog("ret: %li\n", e);
     if (e <= 0)
     {
@@ -158,16 +165,12 @@ double measureFuncDuration(int (*func_ptr)(void))
     return time_taken;
 }
 
-int writeToDev()
-{
+void setupHeader() {
     // konfiguracia hlavicky sprav
     nlh = (struct nlmsghdr *)malloc(NLMSG_SPACE(SIZE));
     nlh->nlmsg_len = NLMSG_SPACE(SIZE);
     nlh->nlmsg_pid = getpid();
     nlh->nlmsg_flags = 0;
-
-    // naplnenie hlavicky obsahom
-    strcpy(NLMSG_DATA(nlh), dataToWrite);
 
     memset(&iov, 0, sizeof(iov));
     iov.iov_base = (void *)nlh;
@@ -178,7 +181,14 @@ int writeToDev()
     msg.msg_namelen = sizeof(dest_addr);
     msg.msg_iov = &iov;
     msg.msg_iovlen = 1;
-    // odoslanie do jadra
+}
+
+int writeToDev()
+{
+    // naplnenie hlavicky obsahom
+    strcpy(NLMSG_DATA(nlh), dataToWrite);
+
+    // ukladanie do jadra
     rc = sendmsg(sock_fd, &msg, 0);
     if (rc < 0)
     {

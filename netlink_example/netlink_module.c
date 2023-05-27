@@ -20,7 +20,7 @@
 
 struct sock *nl_sock = NULL;
 
-// listener na primanie sprav
+// listener na primanie sprav, echo funkcia
 static void nl_rec_msg(struct sk_buff *skb)
 {
     struct sk_buff *skb_out;
@@ -35,7 +35,7 @@ static void nl_rec_msg(struct sk_buff *skb)
     msg = (char *)nlmsg_data(nlh);  // hlavicka spravy 
     msg_size = strlen(msg);
 
-    printk(KERN_INFO "%s: Received from pid %i\n", NAME, pid);
+    // printk(KERN_INFO "%s: Received from pid %i\n", NAME, pid);
     // printk(KERN_INFO "%s: Received from pid %i: %s\n", NAME, pid, msg);
     skb_out = nlmsg_new(msg_size, 0);
     if (!skb_out)
