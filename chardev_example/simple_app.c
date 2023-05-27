@@ -13,13 +13,17 @@
 
 #define DEBUG 0
 
+// Character Device config
+#define DEVICE "/dev/simple_chardev"
+int fd = 0;
+int offset = 0;
+
+// Test application's functions
 clock_t start, end;
 double cpu_time_used;
 
-#define DEVICE "/dev/simple_chardev"
 static size_t SIZE = 4096 ;    // 1MB
-int fd = 0;
-int offset = 0;
+
 char *dataToWrite;
 char *dataToRead;
 
