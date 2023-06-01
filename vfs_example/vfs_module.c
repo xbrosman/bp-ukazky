@@ -2,12 +2,12 @@
     SPDX-License-Identifier: GPL-2.0
     bp_komunikacia/vfs_example/vfs_module.c
     Module taken from: https://pradheepshrinivasan.github.io/2015/07/02/Creating-an-simple-sysfs/
-    Author: 
+    Author:
 
     Modified by Filip Brosman
 
 */
-#include <linux/init.h> 
+#include <linux/init.h>
 #include <linux/module.h>
 #include <linux/kernel.h>
 #include <linux/device.h>
@@ -17,7 +17,7 @@
 #include <linux/fs.h>
 #include <linux/string.h>
 
-#define MAX_SIZE (PAGE_SIZE*2)
+#define MAX_SIZE (PAGE_SIZE * 2)
 #define NAME "vfs_module"
 
 static struct kobject *example_kobject;
@@ -34,25 +34,26 @@ static ssize_t value_store(struct kobject *kobj, struct kobj_attribute *attr, co
     return count;
 }
 
-static struct kobj_attribute value_attribute = __ATTR(value, 0660 , value_show, value_store);
+static struct kobj_attribute value_attribute = __ATTR(value, 0660, value_show, value_store);
 
 int vfs_module_init(void)
 {
     printk(KERN_INFO "%s: %s\n", NAME, __FUNCTION__);
     int e;
     example_kobject = kobject_create_and_add("my_value", kernel_kobj);
-    if(!example_kobject)
+    if (!example_kobject)
         return -ENOMEM;
 
     e = sysfs_create_file(example_kobject, &value_attribute.attr);
-    if (e){
+    if (e)
+    {
         pr_debug("failed to create the value file");
     }
     return e;
 }
 
 void vfs_module_exit(void)
-{	
+{
     printk(KERN_INFO "%s: %s\n", NAME, __FUNCTION__);
     kobject_put(example_kobject);
 }

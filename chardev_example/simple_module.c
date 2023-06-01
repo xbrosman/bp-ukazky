@@ -17,9 +17,8 @@
 
 #define MY_MAJOR 42
 #define MY_MAX_MINORS 5
-#define BUFFER_SIZE 1024*4096    // 4MB Dát
+#define BUFFER_SIZE 1024 * 4096 // 4MB Dát
 #define NAME "Simple_chardev"
-
 
 static char *device_buffer = NULL;
 struct semaphore sem;
@@ -41,37 +40,37 @@ ssize_t read(struct file *pfile, char __user *buffer, size_t length, loff_t *off
     int bytes_to_read = 0;
     if (length >= BUFFER_SIZE)
     {
-        bytes_to_read = BUFFER_SIZE;   
-    }         
+        bytes_to_read = BUFFER_SIZE;
+    }
     else
     {
         bytes_to_read = length;
-    }    
+    }
 
-    bytes_read = copy_to_user(buffer+*offset, device_buffer, bytes_to_read);
+    bytes_read = copy_to_user(buffer + *offset, device_buffer, bytes_to_read);
     if (bytes_read != 0)
     {
         printk(KERN_INFO "Error read: %s", __FUNCTION__);
         return -EFAULT; // vracia bad address
     }
-    //printk(KERN_INFO "%s: %s, %iB, %iB\n",NAME, __FUNCTION__, bytes_to_read, bytes_to_read-bytes_read);
+    // printk(KERN_INFO "%s: %s, %iB, %iB\n",NAME, __FUNCTION__, bytes_to_read, bytes_to_read-bytes_read);
     return bytes_to_read - bytes_read;
 }
 
 ssize_t write(struct file *pfile, const char *buffer, size_t length, loff_t *offset)
 {
-    int bytes_writen = 0;  
-    int bytes_to_write = 0;   
+    int bytes_writen = 0;
+    int bytes_to_write = 0;
     if (length >= BUFFER_SIZE)
     {
-        bytes_to_write = BUFFER_SIZE;   
-    }         
+        bytes_to_write = BUFFER_SIZE;
+    }
     else
     {
         bytes_to_write = length;
-    }   
+    }
     bytes_writen = copy_from_user(device_buffer + *offset, buffer, bytes_to_write);
-    //printk(KERN_INFO "%s: %s, %iB, %iB\n", NAME, __FUNCTION__, bytes_to_write, bytes_to_write-bytes_writen);    
+    // printk(KERN_INFO "%s: %s, %iB, %iB\n", NAME, __FUNCTION__, bytes_to_write, bytes_to_write-bytes_writen);
     return bytes_to_write - bytes_writen;
 }
 

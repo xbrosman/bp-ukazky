@@ -25,18 +25,19 @@ void prepareData()
 
     dataToWrite = 1;
     dataToRead = (char *)malloc(SIZE * sizeof(char));
-    memset(dataToRead, 0, sizeof(dataToRead));   
+    memset(dataToRead, 0, sizeof(dataToRead));
 }
 
 int writeToDev()
 {
     ssize_t res;
     res = write(fd, &dataToWrite, sizeof(dataToWrite), &offset);
-    if (res == -1){
+    if (res == -1)
+    {
         printf("Error during write...\n");
         return 1;
     }
-    //printf("Zapisanych: %liB %i...\n", res, dataToWrite);
+    // printf("Zapisanych: %liB %i...\n", res, dataToWrite);
     return 0;
 }
 
@@ -44,11 +45,12 @@ int readFromDev()
 {
     ssize_t res;
     res = read(fd, dataToRead, SIZE, &offset);
-    if (res == -1){
+    if (res == -1)
+    {
         printf("Error during read...\n");
         return 1;
     }
-    //printf("Precitaných: %liB %i... \n", res, dataToRead);
+    // printf("Precitaných: %liB %i... \n", res, dataToRead);
     return 0;
 }
 

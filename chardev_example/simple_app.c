@@ -22,7 +22,7 @@ int offset = 0;
 clock_t start, end;
 double cpu_time_used;
 
-static size_t SIZE = 4096 ;    // 1MB
+static size_t SIZE = 4096; // 1MB
 
 char *dataToWrite;
 char *dataToRead;
@@ -34,8 +34,8 @@ char *prepareDataWrite(size_t);
 char *prepareDataRead(size_t);
 int prepareData(size_t);
 
-char *changeDataWriteSize(char*, size_t);
-char *changeDataReadSize(char*, size_t);
+char *changeDataWriteSize(char *, size_t);
+char *changeDataReadSize(char *, size_t);
 int changeDataSize(size_t);
 
 int writeToDev();
@@ -46,7 +46,7 @@ int doMeasure();
 int main(int argc, char const *argv[])
 {
     int e;
-    int sizes[5] = {1,128,256,512,1024};
+    int sizes[5] = {1, 128, 256, 512, 1024};
     if (e = checkModule(DEVICE) != 0)
     {
         return e;
@@ -64,20 +64,19 @@ int main(int argc, char const *argv[])
     {
         printErr("Error in open file: %i\n", fd);
         return -1;
-    }        
+    }
 
     for (int i = 0; i < 5; i++)
     {
-        SIZE = sizes[i]*4096;
-        printf("\nMeasurment number: %i, with data size: %liB \n", i+1, SIZE);
+        SIZE = sizes[i] * 4096;
+        printf("\nMeasurment number: %i, with data size: %liB \n", i + 1, SIZE);
         if (changeDataSize(SIZE) != 0)
         {
             printErr("Error in open file: %i\n", fd);
             return -1;
         }
-        doMeasure();  
+        doMeasure();
     }
-   
 
     close(fd);
     free(dataToWrite);
@@ -100,13 +99,13 @@ int doMeasure()
     {
         time_taken = measureFuncDuration(writeToDev);
         sumWrite += time_taken;
-   //     printLog("Data writen: %s\n", dataToWrite);
+        //     printLog("Data writen: %s\n", dataToWrite);
         if (time_taken < 0)
         {
             printLog("Error during reading.");
             return -1;
-        }        
-        printLog("Time to write: %fus\n", time_taken * 1000000);    
+        }
+        printLog("Time to write: %fus\n", time_taken * 1000000);
         printf("%f,", time_taken * 1000000);
     }
 
@@ -116,14 +115,14 @@ int doMeasure()
     {
         time_taken = measureFuncDuration(readFromDev);
         sumRead += time_taken;
-     //   printLog("Data read: %s\n", dataToRead);
+        //   printLog("Data read: %s\n", dataToRead);
         if (time_taken < 0)
         {
             printLog("Error during reading.");
             return -1;
         }
-               
-        printLog("Time to read: %fus\n", time_taken * 1000000);        
+
+        printLog("Time to read: %fus\n", time_taken * 1000000);
         printf("%f,", time_taken * 1000000);
 
         if (strcmp(dataToRead, dataToWrite) != 0)
@@ -153,15 +152,15 @@ int checkModule(char *device)
 
 char *prepareDataWrite(size_t size)
 {
-    char* dataToWrite = (char *)malloc(size * sizeof(char));
+    char *dataToWrite = (char *)malloc(size * sizeof(char));
     memset(dataToWrite, 65, size);
-    dataToWrite[size+1] = '\0';
+    dataToWrite[size + 1] = '\0';
     return dataToWrite;
 }
 
 char *prepareDataRead(size_t size)
 {
-    char* dataToRead = (char *)malloc(size * sizeof(char));
+    char *dataToRead = (char *)malloc(size * sizeof(char));
     memset(dataToRead, 0, sizeof(dataToRead));
     return dataToRead;
 }
@@ -171,23 +170,23 @@ int prepareData(size_t size)
     dataToWrite = prepareDataWrite(size);
     dataToRead = prepareDataRead(size);
 
-    if (dataToWrite==NULL || dataToRead==NULL)
+    if (dataToWrite == NULL || dataToRead == NULL)
         return -1;
 
     return 0;
 }
 
-char *changeDataWriteSize(char* data, size_t size)
+char *changeDataWriteSize(char *data, size_t size)
 {
-    char* dataToWrite = (char *)realloc(data, size * sizeof(char));
+    char *dataToWrite = (char *)realloc(data, size * sizeof(char));
     memset(dataToWrite, 66, size);
-    dataToWrite[size+1] = '\0';
+    dataToWrite[size + 1] = '\0';
     return dataToWrite;
 }
 
-char *changeDataReadSize(char* data, size_t size)
+char *changeDataReadSize(char *data, size_t size)
 {
-    char* dataToRead = (char *)realloc(data, size * sizeof(char));
+    char *dataToRead = (char *)realloc(data, size * sizeof(char));
     memset(dataToRead, 0, sizeof(dataToRead));
     return dataToRead;
 }
@@ -196,7 +195,7 @@ int changeDataSize(size_t size)
 {
     dataToWrite = changeDataWriteSize(dataToWrite, size);
     dataToRead = changeDataReadSize(dataToRead, size);
-    if (dataToWrite==NULL || dataToRead==NULL)
+    if (dataToWrite == NULL || dataToRead == NULL)
         return -1;
 
     return 0;
@@ -233,7 +232,7 @@ double measureFuncDuration(int (*func_ptr)(void))
     t = clock();
     e = func_ptr();
     t = clock() - t;
-    time_taken = ((double)t) / CLOCKS_PER_SEC;    
+    time_taken = ((double)t) / CLOCKS_PER_SEC;
     if (e <= 0)
     {
         printErr("Error in __FUNCTION__ = %s\n", __FUNCTION__);
@@ -258,5 +257,5 @@ void printErr(const char *format, ...)
     va_list args;
     va_start(args, format);
     vprintf(format, args);
-    va_end(args);    
+    va_end(args);
 }

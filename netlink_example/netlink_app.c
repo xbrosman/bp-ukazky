@@ -63,7 +63,7 @@ int networkSetup();
 
 int main(int argc, char **argv)
 {
-    int sizes[5] = {4096,8192,12288,16384, 131072};
+    int sizes[5] = {4096, 8192, 12288, 16384, 131072};
     prepareData(SIZE);
     if (networkSetup() == -1)
     {
@@ -74,15 +74,14 @@ int main(int argc, char **argv)
     for (int i = 0; i < 5; i++)
     {
         SIZE = sizes[i];
-        printf("\nMeasurment number: %i, with data size: %liB \n", i+1, SIZE);
+        printf("\nMeasurment number: %i, with data size: %liB \n", i + 1, SIZE);
         if (changeDataSize(SIZE) != 0)
         {
             printErr("Error in open file: %i\n", sock_fd);
             return -1;
         }
-        doMeasure();  
+        doMeasure();
     }
-
 
     close(sock_fd);
     free(dataToWrite);
@@ -115,7 +114,7 @@ int doMeasure()
 
         printLog("Time to write: %fus\n", time_taken * 1000000);
         printf("%f,", time_taken * 1000000);
-        
+
         memset(dataToRead, 0, SIZE);
         time_taken = measureFuncDuration(readFromDev);
         printf("%f,", time_taken * 1000000);
@@ -129,7 +128,7 @@ int doMeasure()
         }
         printLog("Time to read: %fus\n", time_taken * 1000000);
 
-        // Kontrola prenosu 
+        // Kontrola prenosu
         if (strcmp(dataToRead, dataToWrite) != 0)
         {
             printErr("Data writen and read are not equal\n");
@@ -167,7 +166,8 @@ double measureFuncDuration(int (*func_ptr)(void))
     return time_taken;
 }
 
-void setupHeader() {
+void setupHeader()
+{
     // konfiguracia hlavicky sprav
     nlh = (struct nlmsghdr *)malloc(NLMSG_SPACE(SIZE));
     nlh->nlmsg_len = NLMSG_SPACE(SIZE);
@@ -267,17 +267,17 @@ int networkSetup()
     return 0;
 }
 
-char *changeDataWriteSize(char* data, size_t size)
+char *changeDataWriteSize(char *data, size_t size)
 {
-    char* dataToWrite = (char *)realloc(data, size * sizeof(char));
+    char *dataToWrite = (char *)realloc(data, size * sizeof(char));
     memset(dataToWrite, 66, size);
-    dataToWrite[size+1] = '\0';
+    dataToWrite[size + 1] = '\0';
     return dataToWrite;
 }
 
-char *changeDataReadSize(char* data, size_t size)
+char *changeDataReadSize(char *data, size_t size)
 {
-    char* dataToRead = (char *)realloc(data, size * sizeof(char));
+    char *dataToRead = (char *)realloc(data, size * sizeof(char));
     memset(dataToRead, 0, size);
     return dataToRead;
 }
@@ -286,7 +286,7 @@ int changeDataSize(size_t size)
 {
     dataToWrite = changeDataWriteSize(dataToWrite, size);
     dataToRead = changeDataReadSize(dataToRead, size);
-    if (dataToWrite==NULL || dataToRead==NULL)
+    if (dataToWrite == NULL || dataToRead == NULL)
         return -1;
 
     return 0;
