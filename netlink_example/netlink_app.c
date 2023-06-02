@@ -52,7 +52,7 @@ char *changeDataWriteSize(char *, size_t);
 char *changeDataReadSize(char *, size_t);
 int changeDataSize(size_t);
 
-void setupHeader();
+void setupHeaderForWrite();
 
 int writeToDev();
 int readFromDev();
@@ -102,7 +102,7 @@ int doMeasure()
     int n = 0;
     for (n = 0; n < 1000; n++)
     {
-        setupHeader();
+        setupHeaderForWrite();
         time_taken = measureFuncDuration(writeToDev);
         sumWrite += time_taken;
         //     printLog("Data writen: %s\n", dataToWrite);
@@ -166,9 +166,9 @@ double measureFuncDuration(int (*func_ptr)(void))
     return time_taken;
 }
 
-void setupHeader()
+void setupHeaderForWrite()
 {
-    // konfiguracia hlavicky sprav
+    // konfiguracia hlavicky sprav pred zapisom
     nlh = (struct nlmsghdr *)malloc(NLMSG_SPACE(SIZE));
     nlh->nlmsg_len = NLMSG_SPACE(SIZE);
     nlh->nlmsg_pid = getpid();
