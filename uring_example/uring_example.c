@@ -1,6 +1,7 @@
 /*
     bp_komunikacia/uring_example/uring_example.c
-    Author: Filip Brosman
+    Author: Shuveb Hussain
+    Source: https://unixism.net/loti/tutorial/cp_liburing.html
 */
 
 #include <stdio.h>
