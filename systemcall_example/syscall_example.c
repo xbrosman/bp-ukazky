@@ -1,3 +1,8 @@
+/*
+    bp_komunikacia/systemcall_example/syscall_example.c
+    Author: Filip Brosman
+*/
+
 #include <stdio.h>
 #include <stdlib.h>
 

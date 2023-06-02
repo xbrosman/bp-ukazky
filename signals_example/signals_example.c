@@ -1,3 +1,8 @@
+/*
+    bp_komunikacia/signals_example/signals_example.c
+    Author: Filip Brosman
+*/
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
