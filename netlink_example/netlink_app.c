@@ -63,7 +63,7 @@ int networkSetup();
 
 int main(int argc, char **argv)
 {
-    int sizes[5] = {4096, 8192, 12288, 16384, 131072};
+    int sizes[5] = {4096, 8192, 16384, 65536, 131072};
     prepareData(SIZE);
     if (networkSetup() == -1)
     {
